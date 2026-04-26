@@ -12,9 +12,9 @@ A polished, real-time MPH/KPH speed tracker that runs entirely in your browser �
 | **Top Speed** | Highlights the peak speed reached during the session |
 | **Trip Average** | Running average across all GPS readings since last reset |
 | **Heading & Compass** | Shows bearing in degrees + compass direction (N, NE, SE, …) |
-| **Altitude** | Current altitude in metres above sea level |
+| **Altitude** | Current altitude in meters above sea level |
 | **Speed History Sparkline** | 60-second rolling chart of speed history |
-| **Accuracy Indicator** | Colour-coded GPS accuracy badge (±metres) |
+| **Accuracy Indicator** | Colour-coded GPS accuracy badge (±meters) |
 | **Dark Theme** | Easy to read in a car, day or night |
 
 ## Usage
