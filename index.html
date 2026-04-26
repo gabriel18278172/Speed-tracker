@@ -503,6 +503,8 @@ let speedSamples  = [];  // raw m/s samples for trip average
 let speedHistory  = [];  // last-60-s samples (in display unit) for sparkline
 let raf          = null;
 let lastTimestamp = null;
+let prevCoords    = null; // previous GPS coords for speed calculation fallback
+let prevPosTime   = null; // timestamp (ms) of previous GPS fix
 
 // ── DOM refs ──────────────────────────────────────────
 const gaugeCanvas  = document.getElementById('gaugeCanvas');
@@ -539,6 +541,17 @@ function bearingToCompass(deg) {
 }
 
 function fmtSpeed(v) { return Math.round(v).toString(); }
+
+// Haversine distance between two lat/lon points, returns metres
+function haversineMeters(lat1, lon1, lat2, lon2) {
+  const R    = 6371000;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a    = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+             + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180)
+             * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 // ── Unit toggle ────────────────────────────────────────
 function setUnit(u) {
@@ -593,7 +606,9 @@ function stopTracking() {
     navigator.geolocation.clearWatch(watchId);
     watchId = null;
   }
-  tracking = false;
+  tracking    = false;
+  prevCoords  = null;
+  prevPosTime = null;
   setStatus('idle', 'Tracking stopped');
   trackBtn.textContent = 'Start Tracking';
   trackBtn.classList.remove('stop');
@@ -609,9 +624,25 @@ function onPosition(pos) {
     trackBtn.classList.add('stop');
   }
 
-  const { speed, accuracy, heading, altitude } = pos.coords;
-  // speed can be null on some devices/browsers
-  const mps = (speed !== null && speed >= 0) ? speed : 0;
+  const { speed, accuracy, heading, altitude, latitude, longitude } = pos.coords;
+
+  // Use native speed when available; fall back to distance/time calculation
+  let mps;
+  if (speed !== null && speed >= 0) {
+    mps = speed;
+  } else if (prevCoords !== null) {
+    const dt = (pos.timestamp - prevPosTime) / 1000; // seconds
+    if (dt > 0) {
+      const dist = haversineMeters(prevCoords.lat, prevCoords.lon, latitude, longitude);
+      mps = dist / dt;
+    } else {
+      mps = 0;
+    }
+  } else {
+    mps = 0;
+  }
+  prevCoords  = { lat: latitude, lon: longitude };
+  prevPosTime = pos.timestamp;
 
   rawMps       = mps;
   currentSpeed = toUnit(mps);
@@ -657,16 +688,31 @@ function onPosition(pos) {
 }
 
 function onGeoError(err) {
-  trackBtn.disabled = false;
   const msgs = {
     1: 'Permission denied. Please allow location access.',
     2: 'Position unavailable. Check your GPS signal.',
     3: 'GPS timeout. Retrying…',
   };
-  setStatus('error', msgs[err.code] || 'Unknown GPS error.');
+  const msg = msgs[err.code] || 'Unknown GPS error.';
+
   if (err.code === 1) {
+    // Permission denied — fully stop and show error
     stopTracking();
+    setStatus('error', msg);
+    return;
   }
+
+  // For transient errors (position unavailable / timeout) clean up so the
+  // button works correctly when the user taps it again.
+  if (watchId !== null) {
+    navigator.geolocation.clearWatch(watchId);
+    watchId = null;
+  }
+  tracking = false;
+  trackBtn.textContent = 'Start Tracking';
+  trackBtn.classList.remove('stop');
+  trackBtn.disabled = false;
+  setStatus('error', msg);
 }
 
 function updateAccuracy(acc) {
@@ -713,14 +759,16 @@ function toggleTracking() {
 }
 
 function resetStats() {
-  maxRawMps   = 0;
-  maxSpeedVal = 0;
-  speedSamples  = [];
-  rawHistory    = [];
-  speedHistory  = [];
+  maxRawMps    = 0;
+  maxSpeedVal  = 0;
+  speedSamples = [];
+  rawHistory   = [];
+  speedHistory = [];
   currentSpeed = 0;
   displaySpeed = 0;
   rawMps       = 0;
+  prevCoords   = null;
+  prevPosTime  = null;
   maxSpeedEl.textContent = '0';
   avgSpeedEl.textContent = '0';
   altVal.textContent     = '—';
