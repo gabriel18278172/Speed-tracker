@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0a0e1a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Speed Tracker</title>
+  <style>
+    /* ── Reset & base ─────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0a0e1a;
+      --surface:   #111827;
+      --border:    #1e2a3a;
+      --accent:    #00d4ff;
+      --accent2:   #00ff9d;
+      --warn:      #ff6b35;
+      --text:      #e2e8f0;
+      --muted:     #64748b;
+      --glow:      0 0 20px rgba(0, 212, 255, 0.4);
+      --glow2:     0 0 20px rgba(0, 255, 157, 0.4);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100dvh;
+      padding: env(safe-area-inset-top, 12px) 16px
+               env(safe-area-inset-bottom, 12px);
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(0,212,255,0.07) 0%, transparent 60%),
+        var(--bg);
+    }
+
+    /* ── Header ───────────────────────────────────────────── */
+    header {
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0 8px;
+    }
+
+    .app-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      text-shadow: var(--glow);
+    }
+
+    /* ── Unit toggle ──────────────────────────────────────── */
+    .unit-toggle {
+      display: flex;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    .unit-toggle button {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      padding: 5px 14px;
+      cursor: pointer;
+      transition: color 0.2s, background 0.2s;
+    }
+
+    .unit-toggle button.active {
+      background: var(--accent);
+      color: #000;
+      border-radius: 20px;
+    }
+
+    /* ── Speedometer canvas ───────────────────────────────── */
+    .gauge-wrap {
+      position: relative;
+      width: min(92vw, 340px);
+      margin: 8px auto 0;
+    }
+
+    #gaugeCanvas {
+      width: 100%;
+      height: auto;
+      filter: drop-shadow(0 0 18px rgba(0,212,255,0.25));
+    }
+
+    /* ── Speed readout ────────────────────────────────────── */
+    .speed-readout {
+      position: absolute;
+      bottom: 18%;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .speed-value {
+      font-size: clamp(3.5rem, 16vw, 5.5rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      color: #fff;
+      text-shadow: 0 0 30px rgba(0,212,255,0.6);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .speed-unit {
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      color: var(--accent);
+      margin-top: 2px;
+    }
+
+    /* ── Status bar ───────────────────────────────────────── */
+    .status-bar {
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 10px 0;
+      min-height: 28px;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--muted);
+      flex-shrink: 0;
+      transition: background 0.4s;
+    }
+
+    .status-dot.active  { background: var(--accent2); box-shadow: var(--glow2); animation: pulse 2s infinite; }
+    .status-dot.error   { background: var(--warn); }
+    .status-dot.waiting { background: var(--accent); animation: pulse 1.2s infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.4; }
+    }
+
+    .status-text {
+      font-size: 0.8rem;
+      color: var(--muted);
+      flex: 1;
+    }
+
+    .accuracy-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      transition: color 0.4s, border-color 0.4s;
+    }
+
+    .accuracy-badge.good   { color: var(--accent2); border-color: var(--accent2); }
+    .accuracy-badge.ok     { color: var(--accent);  border-color: var(--accent);  }
+    .accuracy-badge.poor   { color: var(--warn);    border-color: var(--warn);    }
+
+    /* ── Stats grid ───────────────────────────────────────── */
+    .stats-grid {
+      width: 100%;
+      max-width: 440px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transition: border-color 0.4s;
+    }
+
+    .stat-card.highlight {
+      border-color: rgba(0,212,255,0.4);
+      background: rgba(0,212,255,0.04);
+    }
+
+    .stat-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .stat-value {
+      font-size: 1.55rem;
+      font-weight: 700;
+      line-height: 1.1;
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat-sub {
+      font-size: 0.68rem;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+
+    /* ── Heading compass ──────────────────────────────────── */
+    .compass-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .compass-ring {
+      width: 28px;
+      height: 28px;
+      border: 2px solid var(--border);
+      border-radius: 50%;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .compass-needle {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 2px;
+      height: 10px;
+      background: var(--accent);
+      transform-origin: bottom center;
+      transform: translate(-50%, -100%) rotate(0deg);
+      transition: transform 0.6s cubic-bezier(0.34,1.56,0.64,1);
+      border-radius: 1px;
+    }
+
+    .compass-needle::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 2px;
+      height: 10px;
+      background: var(--muted);
+      border-radius: 1px;
+    }
+
+    /* ── Start/Stop button ────────────────────────────────── */
+    .btn-wrap {
+      width: 100%;
+      max-width: 440px;
+      margin-top: 14px;
+    }
+
+    #trackBtn {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 16px;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.2s, background 0.2s;
+      background: linear-gradient(135deg, var(--accent), #0099bb);
+      color: #000;
+      box-shadow: 0 4px 24px rgba(0,212,255,0.35);
+    }
+
+    #trackBtn:active { transform: scale(0.97); }
+    #trackBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    #trackBtn.stop {
+      background: linear-gradient(135deg, var(--warn), #c94010);
+      box-shadow: 0 4px 24px rgba(255,107,53,0.35);
+      color: #fff;
+    }
+
+    /* ── Reset button ─────────────────────────────────────── */
+    #resetBtn {
+      width: 100%;
+      margin-top: 8px;
+      padding: 11px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    #resetBtn:hover { color: var(--text); border-color: var(--text); }
+
+    /* ── Speed history sparkline ──────────────────────────── */
+    .history-card {
+      grid-column: 1 / -1;
+      padding: 14px 16px 10px;
+    }
+
+    #sparkCanvas {
+      width: 100%;
+      height: 48px;
+      margin-top: 8px;
+      border-radius: 6px;
+    }
+
+    /* ── Notification / permission prompt ────────────────── */
+    .perm-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(10,14,26,0.96);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      padding: 32px;
+      z-index: 100;
+      backdrop-filter: blur(6px);
+    }
+
+    .perm-overlay.hidden { display: none; }
+
+    .perm-icon {
+      font-size: 3.5rem;
+      line-height: 1;
+    }
+
+    .perm-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .perm-desc {
+      font-size: 0.9rem;
+      color: var(--muted);
+      text-align: center;
+      max-width: 300px;
+      line-height: 1.6;
+    }
+
+    #permBtn {
+      padding: 14px 40px;
+      border: none;
+      border-radius: 16px;
+      background: var(--accent);
+      color: #000;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      box-shadow: 0 4px 24px rgba(0,212,255,0.4);
+    }
+
+    /* ── Landscape tweaks ─────────────────────────────────── */
+    @media (orientation: landscape) and (max-height: 500px) {
+      .gauge-wrap { width: min(45vw, 220px); margin: 0 auto; }
+      body        { flex-direction: row; flex-wrap: wrap; align-items: flex-start; }
+      header, .status-bar, .btn-wrap { max-width: 100%; }
+      .stats-grid { max-width: 100%; grid-template-columns: repeat(4, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Permission overlay shown before first use -->
+  <div class="perm-overlay" id="permOverlay">
+    <div class="perm-icon">📍</div>
+    <div class="perm-title">Location Access Required</div>
+    <div class="perm-desc">
+      Speed Tracker uses your device's GPS to calculate your exact speed in real-time.
+      Your location is never stored or shared.
+    </div>
+    <button id="permBtn">Enable GPS Tracking</button>
+  </div>
+
+  <!-- ── Header ──────────────────────────────────────── -->
+  <header>
+    <div class="app-title">⚡ Speed Tracker</div>
+    <div class="unit-toggle">
+      <button id="btnMph" class="active" onclick="setUnit('mph')">MPH</button>
+      <button id="btnKph" onclick="setUnit('kph')">KPH</button>
+    </div>
+  </header>
+
+  <!-- ── Gauge ───────────────────────────────────────── -->
+  <div class="gauge-wrap">
+    <canvas id="gaugeCanvas" width="340" height="220"></canvas>
+    <div class="speed-readout">
+      <div class="speed-value" id="speedVal">0</div>
+      <div class="speed-unit" id="speedUnitLbl">MPH</div>
+    </div>
+  </div>
+
+  <!-- ── GPS status ──────────────────────────────────── -->
+  <div class="status-bar">
+    <div class="status-dot" id="statusDot"></div>
+    <span class="status-text" id="statusText">Tap Start to begin tracking</span>
+    <span class="accuracy-badge" id="accuracyBadge">GPS: —</span>
+  </div>
+
+  <!-- ── Stats ───────────────────────────────────────── -->
+  <div class="stats-grid">
+    <!-- Top speed -->
+    <div class="stat-card" id="cardMax">
+      <div class="stat-label">Top Speed</div>
+      <div class="stat-value" id="maxSpeed">0</div>
+      <div class="stat-sub" id="maxSpeedUnit">MPH</div>
+    </div>
+
+    <!-- Average -->
+    <div class="stat-card">
+      <div class="stat-label">Avg Speed</div>
+      <div class="stat-value" id="avgSpeed">0</div>
+      <div class="stat-sub" id="avgSpeedUnit">MPH (trip)</div>
+    </div>
+
+    <!-- Heading -->
+    <div class="stat-card">
+      <div class="stat-label">Heading</div>
+      <div class="compass-wrap">
+        <div class="compass-ring">
+          <div class="compass-needle" id="compassNeedle"></div>
+        </div>
+        <div>
+          <div class="stat-value" style="font-size:1.2rem" id="headingVal">—</div>
+          <div class="stat-sub" id="headingDir">Waiting…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Altitude -->
+    <div class="stat-card">
+      <div class="stat-label">Altitude</div>
+      <div class="stat-value" id="altVal">—</div>
+      <div class="stat-sub">metres (MSL)</div>
+    </div>
+
+    <!-- Sparkline -->
+    <div class="stat-card history-card">
+      <div class="stat-label">Speed History (last 60 s)</div>
+      <canvas id="sparkCanvas" width="800" height="96"></canvas>
+    </div>
+  </div>
+
+  <!-- ── Controls ────────────────────────────────────── -->
+  <div class="btn-wrap">
+    <button id="trackBtn" onclick="toggleTracking()">Start Tracking</button>
+    <button id="resetBtn" onclick="resetStats()">Reset Stats</button>
+  </div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   Speed Tracker — core logic
+   ═══════════════════════════════════════════════════════ */
+
+const CANVAS_W = 340, CANVAS_H = 220;
+const ARC_R    = 130;            // gauge arc radius (design units)
+const ARC_CX   = 170, ARC_CY = 175;
+const ARC_START = Math.PI * 1.1; // left end of arc
+const ARC_END   = Math.PI * 1.9; // right end (almost full bottom circle)
+const MAX_SPEED_GAUGE = 120;     // the full-scale value shown on gauge
+
+// ── State ─────────────────────────────────────────────
+let unit         = 'mph';
+let tracking     = false;
+let watchId      = null;
+let currentSpeed = 0;   // in chosen unit
+let displaySpeed = 0;   // interpolated for animation
+let maxSpeedVal  = 0;
+let speedSamples  = [];  // raw m/s samples for trip average
+let speedHistory  = [];  // last-60-s samples (in display unit) for sparkline
+let raf          = null;
+let lastTimestamp = null;
+
+// ── DOM refs ──────────────────────────────────────────
+const gaugeCanvas  = document.getElementById('gaugeCanvas');
+const gCtx         = gaugeCanvas.getContext('2d');
+const sparkCanvas  = document.getElementById('sparkCanvas');
+const sCtx         = sparkCanvas.getContext('2d');
+const speedValEl   = document.getElementById('speedVal');
+const speedUnitEl  = document.getElementById('speedUnitLbl');
+const statusDot    = document.getElementById('statusDot');
+const statusText   = document.getElementById('statusText');
+const accuracyBadge= document.getElementById('accuracyBadge');
+const maxSpeedEl   = document.getElementById('maxSpeed');
+const maxSpeedUnitEl= document.getElementById('maxSpeedUnit');
+const avgSpeedEl   = document.getElementById('avgSpeed');
+const avgSpeedUnitEl= document.getElementById('avgSpeedUnit');
+const headingVal   = document.getElementById('headingVal');
+const headingDir   = document.getElementById('headingDir');
+const compassNeedle= document.getElementById('compassNeedle');
+const altVal       = document.getElementById('altVal');
+const trackBtn     = document.getElementById('trackBtn');
+const permOverlay  = document.getElementById('permOverlay');
+
+// ── Helpers ────────────────────────────────────────────
+function mpsToMph(v) { return v * 2.23694; }
+function mpsToKph(v) { return v * 3.6;     }
+function toUnit(mps)  {
+  return unit === 'mph' ? mpsToMph(mps) : mpsToKph(mps);
+}
+
+function bearingToCompass(deg) {
+  const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE',
+                'S','SSW','SW','WSW','W','WNW','NW','NNW'];
+  return dirs[Math.round(deg / 22.5) % 16];
+}
+
+function fmtSpeed(v) { return Math.round(v).toString(); }
+
+// ── Unit toggle ────────────────────────────────────────
+function setUnit(u) {
+  unit = u;
+  document.getElementById('btnMph').classList.toggle('active', u === 'mph');
+  document.getElementById('btnKph').classList.toggle('active', u === 'kph');
+  speedUnitEl.textContent   = u.toUpperCase();
+  maxSpeedUnitEl.textContent = u.toUpperCase();
+  avgSpeedUnitEl.textContent = u.toUpperCase() + ' (trip)';
+  // Convert stored values
+  if (u === 'mph') {
+    maxSpeedVal  = mpsToMph(maxRawMps);
+    currentSpeed  = toUnit(rawMps);
+    speedHistory  = rawHistory.map(h => ({ t: h.t, v: toUnit(h.v) }));
+  } else {
+    maxSpeedVal   = mpsToKph(maxRawMps);
+    currentSpeed  = toUnit(rawMps);
+    speedHistory  = rawHistory.map(h => ({ t: h.t, v: toUnit(h.v) }));
+  }
+  maxSpeedEl.textContent = fmtSpeed(maxSpeedVal);
+  updateAvg();
+}
+
+// ── Raw m/s store ──────────────────────────────────────
+let rawMps     = 0;
+let maxRawMps  = 0;
+let rawHistory = [];  // { t, v } in m/s for sparkline source
+
+// ── Geolocation ────────────────────────────────────────
+function startTracking() {
+  if (!('geolocation' in navigator)) {
+    setStatus('error', '⚠ Geolocation not supported on this device.');
+    return;
+  }
+
+  setStatus('waiting', 'Acquiring GPS signal…');
+  trackBtn.disabled = true;
+
+  watchId = navigator.geolocation.watchPosition(
+    onPosition,
+    onGeoError,
+    {
+      enableHighAccuracy: true,
+      maximumAge:         0,
+      timeout:            15000
+    }
+  );
+}
+
+function stopTracking() {
+  if (watchId !== null) {
+    navigator.geolocation.clearWatch(watchId);
+    watchId = null;
+  }
+  tracking = false;
+  setStatus('idle', 'Tracking stopped');
+  trackBtn.textContent = 'Start Tracking';
+  trackBtn.classList.remove('stop');
+  trackBtn.disabled = false;
+}
+
+function onPosition(pos) {
+  if (!tracking) {
+    // First fix — we're live
+    tracking = true;
+    trackBtn.disabled    = false;
+    trackBtn.textContent = 'Stop Tracking';
+    trackBtn.classList.add('stop');
+  }
+
+  const { speed, accuracy, heading, altitude } = pos.coords;
+  // speed can be null on some devices/browsers
+  const mps = (speed !== null && speed >= 0) ? speed : 0;
+
+  rawMps       = mps;
+  currentSpeed = toUnit(mps);
+
+  // Max speed
+  if (mps > maxRawMps) {
+    maxRawMps  = mps;
+    maxSpeedVal = toUnit(mps);
+    maxSpeedEl.textContent = fmtSpeed(maxSpeedVal);
+    document.getElementById('cardMax').classList.add('highlight');
+    setTimeout(() => document.getElementById('cardMax').classList.remove('highlight'), 800);
+  }
+
+  // History (keep last 60 seconds)
+  const now = Date.now();
+  rawHistory.push({ t: now, v: mps });
+  rawHistory    = rawHistory.filter(h => now - h.t <= 60000);
+  speedHistory  = rawHistory.map(h => ({ t: h.t, v: toUnit(h.v) }));
+
+  // Samples for average (unlimited during trip)
+  speedSamples.push(mps);
+  updateAvg();
+
+  // Heading
+  if (heading !== null && heading >= 0) {
+    const deg = Math.round(heading);
+    headingVal.textContent  = deg + '°';
+    headingDir.textContent  = bearingToCompass(deg);
+    compassNeedle.style.transform = `translate(-50%, -100%) rotate(${deg}deg)`;
+  } else {
+    headingVal.textContent = '—';
+    headingDir.textContent = 'No compass data';
+  }
+
+  // Altitude
+  altVal.textContent = altitude !== null ? Math.round(altitude) + ' m' : '—';
+
+  // Accuracy badge
+  updateAccuracy(accuracy);
+
+  // Status
+  setStatus('active', 'GPS active — high accuracy');
+}
+
+function onGeoError(err) {
+  trackBtn.disabled = false;
+  const msgs = {
+    1: 'Permission denied. Please allow location access.',
+    2: 'Position unavailable. Check your GPS signal.',
+    3: 'GPS timeout. Retrying…',
+  };
+  setStatus('error', msgs[err.code] || 'Unknown GPS error.');
+  if (err.code === 1) {
+    stopTracking();
+  }
+}
+
+function updateAccuracy(acc) {
+  if (acc === null || acc === undefined) {
+    accuracyBadge.textContent = 'GPS: —';
+    accuracyBadge.className   = 'accuracy-badge';
+    return;
+  }
+  const m = Math.round(acc);
+  accuracyBadge.textContent = `±${m} m`;
+  if (acc <= 10) {
+    accuracyBadge.className = 'accuracy-badge good';
+  } else if (acc <= 30) {
+    accuracyBadge.className = 'accuracy-badge ok';
+  } else {
+    accuracyBadge.className = 'accuracy-badge poor';
+  }
+}
+
+function updateAvg() {
+  if (speedSamples.length === 0) { avgSpeedEl.textContent = '0'; return; }
+  const sum = speedSamples.reduce((a, b) => a + b, 0);
+  avgSpeedEl.textContent = fmtSpeed(toUnit(sum / speedSamples.length));
+  avgSpeedUnitEl.textContent = unit.toUpperCase() + ' (trip)';
+}
+
+// ── Status helpers ─────────────────────────────────────
+function setStatus(type, msg) {
+  statusText.textContent = msg;
+  statusDot.className    = 'status-dot';
+  if (type === 'active')  statusDot.classList.add('active');
+  if (type === 'error')   statusDot.classList.add('error');
+  if (type === 'waiting') statusDot.classList.add('waiting');
+}
+
+// ── Toggle ─────────────────────────────────────────────
+function toggleTracking() {
+  if (tracking || watchId !== null) {
+    stopTracking();
+  } else {
+    permOverlay.classList.add('hidden');
+    startTracking();
+  }
+}
+
+function resetStats() {
+  maxRawMps   = 0;
+  maxSpeedVal = 0;
+  speedSamples  = [];
+  rawHistory    = [];
+  speedHistory  = [];
+  currentSpeed = 0;
+  displaySpeed = 0;
+  rawMps       = 0;
+  maxSpeedEl.textContent = '0';
+  avgSpeedEl.textContent = '0';
+  altVal.textContent     = '—';
+  headingVal.textContent = '—';
+  headingDir.textContent = 'Waiting…';
+  speedValEl.textContent = '0';
+  updateAccuracy(null);
+}
+
+// ── Permission overlay ─────────────────────────────────
+document.getElementById('permBtn').addEventListener('click', () => {
+  permOverlay.classList.add('hidden');
+  startTracking();
+});
+
+// ── Gauge drawing ──────────────────────────────────────
+function drawGauge(speed) {
+  const W = CANVAS_W, H = CANVAS_H;
+  const cx = ARC_CX, cy = ARC_CY, r = ARC_R;
+  const ratio = Math.min(speed / MAX_SPEED_GAUGE, 1);
+
+  gCtx.clearRect(0, 0, W, H);
+
+  // ── Outer glow ring (track) ────────────────────────
+  gCtx.beginPath();
+  gCtx.arc(cx, cy, r, ARC_START, ARC_END);
+  gCtx.strokeStyle = 'rgba(255,255,255,0.05)';
+  gCtx.lineWidth   = 22;
+  gCtx.lineCap     = 'round';
+  gCtx.stroke();
+
+  // ── Background track ──────────────────────────────
+  gCtx.beginPath();
+  gCtx.arc(cx, cy, r, ARC_START, ARC_END);
+  gCtx.strokeStyle = 'rgba(255,255,255,0.06)';
+  gCtx.lineWidth   = 14;
+  gCtx.lineCap     = 'round';
+  gCtx.stroke();
+
+  // ── Tick marks ────────────────────────────────────
+  const totalAngle = ARC_END - ARC_START;
+  const steps      = 12;
+  for (let i = 0; i <= steps; i++) {
+    const a    = ARC_START + (i / steps) * totalAngle;
+    const isMajor = i % 3 === 0;
+    const ir   = r - (isMajor ? 24 : 18);
+    const or   = r - 8;
+    const x1   = cx + Math.cos(a) * ir;
+    const y1   = cy + Math.sin(a) * ir;
+    const x2   = cx + Math.cos(a) * or;
+    const y2   = cy + Math.sin(a) * or;
+    gCtx.beginPath();
+    gCtx.moveTo(x1, y1);
+    gCtx.lineTo(x2, y2);
+    gCtx.strokeStyle = isMajor ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.15)';
+    gCtx.lineWidth   = isMajor ? 2.5 : 1.5;
+    gCtx.stroke();
+
+    // Speed labels on major ticks
+    if (isMajor) {
+      const val   = Math.round((i / steps) * MAX_SPEED_GAUGE);
+      const lx    = cx + Math.cos(a) * (r - 38);
+      const ly    = cy + Math.sin(a) * (r - 38);
+      gCtx.fillStyle = 'rgba(255,255,255,0.3)';
+      gCtx.font      = '11px system-ui, sans-serif';
+      gCtx.textAlign = 'center';
+      gCtx.textBaseline = 'middle';
+      gCtx.fillText(val, lx, ly);
+    }
+  }
+
+  // ── Coloured progress arc ─────────────────────────
+  if (ratio > 0) {
+    const arcEnd = ARC_START + ratio * totalAngle;
+    // Colour: green → cyan → orange → red
+    let colour;
+    if (ratio < 0.5)       colour = '#00ff9d';
+    else if (ratio < 0.75) colour = '#00d4ff';
+    else if (ratio < 0.9)  colour = '#ff9900';
+    else                   colour = '#ff3333';
+
+    // Glowing outer line
+    gCtx.beginPath();
+    gCtx.arc(cx, cy, r, ARC_START, arcEnd);
+    gCtx.strokeStyle = colour;
+    gCtx.lineWidth   = 22;
+    gCtx.lineCap     = 'round';
+    gCtx.globalAlpha = 0.15;
+    gCtx.stroke();
+    gCtx.globalAlpha = 1;
+
+    // Main line
+    gCtx.beginPath();
+    gCtx.arc(cx, cy, r, ARC_START, arcEnd);
+    gCtx.strokeStyle = colour;
+    gCtx.lineWidth   = 10;
+    gCtx.lineCap     = 'round';
+    // Gradient effect by adding shadow
+    gCtx.shadowColor  = colour;
+    gCtx.shadowBlur   = 16;
+    gCtx.stroke();
+    gCtx.shadowBlur   = 0;
+  }
+
+  // ── Needle ────────────────────────────────────────
+  const needleAngle = ARC_START + ratio * totalAngle;
+  const nLen        = r - 30;
+  const nx = cx + Math.cos(needleAngle) * nLen;
+  const ny = cy + Math.sin(needleAngle) * nLen;
+
+  // Needle glow
+  gCtx.beginPath();
+  gCtx.moveTo(cx, cy);
+  gCtx.lineTo(nx, ny);
+  gCtx.strokeStyle = '#fff';
+  gCtx.lineWidth   = 6;
+  gCtx.lineCap     = 'round';
+  gCtx.shadowColor = '#00d4ff';
+  gCtx.shadowBlur  = 18;
+  gCtx.stroke();
+  gCtx.shadowBlur  = 0;
+
+  // Needle body
+  gCtx.beginPath();
+  gCtx.moveTo(cx, cy);
+  gCtx.lineTo(nx, ny);
+  gCtx.strokeStyle = '#fff';
+  gCtx.lineWidth   = 2.5;
+  gCtx.stroke();
+
+  // Centre hub
+  gCtx.beginPath();
+  gCtx.arc(cx, cy, 9, 0, Math.PI * 2);
+  gCtx.fillStyle = '#fff';
+  gCtx.shadowColor = '#00d4ff';
+  gCtx.shadowBlur  = 14;
+  gCtx.fill();
+  gCtx.shadowBlur  = 0;
+  gCtx.beginPath();
+  gCtx.arc(cx, cy, 5, 0, Math.PI * 2);
+  gCtx.fillStyle = '#0a0e1a';
+  gCtx.fill();
+}
+
+// ── Sparkline drawing ──────────────────────────────────
+function drawSpark() {
+  const W = sparkCanvas.width;
+  const H = sparkCanvas.height;
+  sCtx.clearRect(0, 0, W, H);
+
+  if (speedHistory.length < 2) {
+    sCtx.fillStyle = 'rgba(255,255,255,0.07)';
+    sCtx.fillRect(0, 0, W, H);
+    sCtx.fillStyle = 'rgba(255,255,255,0.2)';
+    sCtx.font      = '20px system-ui';
+    sCtx.textAlign = 'center';
+    sCtx.textBaseline = 'middle';
+    sCtx.fillText('No data yet', W / 2, H / 2);
+    return;
+  }
+
+  const maxV = Math.max(...speedHistory.map(h => h.v), 1);
+  const minT = speedHistory[0].t;
+  const maxT = speedHistory[speedHistory.length - 1].t;
+  const span = maxT - minT || 1;
+
+  // Gradient fill
+  const grad = sCtx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0,   'rgba(0,212,255,0.5)');
+  grad.addColorStop(1,   'rgba(0,212,255,0.0)');
+
+  sCtx.beginPath();
+  speedHistory.forEach((p, i) => {
+    const x = ((p.t - minT) / span) * W;
+    const y = H - (p.v / maxV) * (H - 4) - 2;
+    if (i === 0) sCtx.moveTo(x, y);
+    else         sCtx.lineTo(x, y);
+  });
+  // Close path for fill
+  sCtx.lineTo(W, H);
+  sCtx.lineTo(0, H);
+  sCtx.closePath();
+  sCtx.fillStyle = grad;
+  sCtx.fill();
+
+  // Line
+  sCtx.beginPath();
+  speedHistory.forEach((p, i) => {
+    const x = ((p.t - minT) / span) * W;
+    const y = H - (p.v / maxV) * (H - 4) - 2;
+    if (i === 0) sCtx.moveTo(x, y);
+    else         sCtx.lineTo(x, y);
+  });
+  sCtx.strokeStyle = '#00d4ff';
+  sCtx.lineWidth   = 2.5;
+  sCtx.lineJoin    = 'round';
+  sCtx.shadowColor = '#00d4ff';
+  sCtx.shadowBlur  = 8;
+  sCtx.stroke();
+  sCtx.shadowBlur  = 0;
+}
+
+// ── Animation loop ─────────────────────────────────────
+function loop(ts) {
+  raf = requestAnimationFrame(loop);
+
+  const dt = lastTimestamp ? (ts - lastTimestamp) / 1000 : 0.016;
+  lastTimestamp = ts;
+
+  // Smooth interpolation toward target speed
+  const k = tracking ? 4.0 : 6.0;   // chase factor
+  displaySpeed += (currentSpeed - displaySpeed) * Math.min(k * dt, 1);
+  if (Math.abs(displaySpeed - currentSpeed) < 0.1) displaySpeed = currentSpeed;
+
+  const shown = Math.round(displaySpeed);
+  speedValEl.textContent = shown.toString();
+
+  drawGauge(displaySpeed);
+  drawSpark();
+}
+
+// ── Kick off render loop immediately ──────────────────
+raf = requestAnimationFrame(loop);
+
+// Show permission overlay (already shown via HTML on load)
+// It hides itself when user clicks the button.
+</script>
+</body>
+</html>
