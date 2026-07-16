@@ -2,999 +2,1260 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#0a0e1a" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>Speed Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="theme-color" content="#0b1020" />
+  <title>PulseDesk AI — Business Assistant</title>
   <style>
-    /* ── Reset & base ─────────────────────────────────────── */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg:        #0a0e1a;
-      --surface:   #111827;
-      --border:    #1e2a3a;
-      --accent:    #00d4ff;
-      --accent2:   #00ff9d;
-      --warn:      #ff6b35;
-      --text:      #e2e8f0;
-      --muted:     #64748b;
-      --glow:      0 0 20px rgba(0, 212, 255, 0.4);
-      --glow2:     0 0 20px rgba(0, 255, 157, 0.4);
+    :root{
+      --bg:#0b1020;
+      --bg2:#0f172a;
+      --surface:rgba(15,23,42,.82);
+      --surface2:rgba(2,6,23,.72);
+      --line:rgba(148,163,184,.16);
+      --line2:rgba(59,130,246,.28);
+      --text:#e5eefc;
+      --muted:#94a3b8;
+      --accent:#6ee7ff;
+      --accent2:#a78bfa;
+      --good:#34d399;
+      --warn:#fbbf24;
+      --bad:#fb7185;
+      --shadow:0 24px 80px rgba(0,0,0,.42);
+      --radius:22px;
+      --radius2:16px;
+      --radius3:12px;
     }
-
-    html, body {
-      height: 100%;
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      overflow-x: hidden;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    body {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100dvh;
-      padding: env(safe-area-inset-top, 12px) 16px
-               env(safe-area-inset-bottom, 12px);
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      color:var(--text);
       background:
-        radial-gradient(ellipse at 50% 0%, rgba(0,212,255,0.07) 0%, transparent 60%),
-        var(--bg);
+        radial-gradient(1200px 600px at 20% -10%, rgba(110,231,255,.18), transparent 55%),
+        radial-gradient(900px 500px at 85% 8%, rgba(167,139,250,.18), transparent 50%),
+        linear-gradient(180deg, #08101e 0%, #0b1020 38%, #050814 100%);
+      overflow-x:hidden;
+    }
+    a{color:inherit}
+    button,input,textarea,select{font:inherit}
+    .shell{
+      min-height:100%;
+      display:grid;
+      grid-template-columns:280px minmax(0,1fr);
+      gap:20px;
+      padding:20px;
+    }
+    .panel, .card, .hero, .modal-content{
+      background:linear-gradient(180deg, rgba(15,23,42,.86), rgba(2,6,23,.82));
+      border:1px solid var(--line);
+      box-shadow:var(--shadow);
+      backdrop-filter: blur(16px);
+    }
+    .sidebar{
+      border-radius:28px;
+      padding:22px;
+      position:sticky;
+      top:20px;
+      height:calc(100vh - 40px);
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:14px;
+    }
+    .logo{
+      width:52px;height:52px;border-radius:16px;
+      background:
+        radial-gradient(circle at 30% 25%, #bff7ff 0%, #6ee7ff 22%, transparent 24%),
+        linear-gradient(135deg, #0ea5e9, #8b5cf6 58%, #22c55e);
+      box-shadow:0 12px 30px rgba(110,231,255,.22), inset 0 1px 0 rgba(255,255,255,.25);
+    }
+    .brand h1{margin:0;font-size:1.05rem;letter-spacing:.02em}
+    .brand p{margin:3px 0 0;color:var(--muted);font-size:.84rem;line-height:1.35}
+    .nav{
+      display:grid;
+      gap:10px;
+      margin-top:6px;
+    }
+    .nav button{
+      width:100%;
+      border:1px solid transparent;
+      background:transparent;
+      color:var(--muted);
+      padding:13px 14px;
+      border-radius:16px;
+      text-align:left;
+      display:flex;
+      align-items:center;
+      gap:12px;
+      cursor:pointer;
+      transition:.22s ease;
+    }
+    .nav button:hover{background:rgba(148,163,184,.07);color:var(--text)}
+    .nav button.active{
+      background:linear-gradient(135deg, rgba(110,231,255,.14), rgba(167,139,250,.14));
+      border-color:var(--line2);
+      color:var(--text);
+      box-shadow:0 8px 22px rgba(59,130,246,.12);
+    }
+    .nav .icon{width:24px;text-align:center;font-size:1rem}
+    .sidebar .mini{
+      margin-top:auto;
+      padding:16px;
+      border-radius:18px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.02);
+    }
+    .mini .label{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+    .mini .value{font-size:1.6rem;font-weight:800;margin-top:8px}
+    .mini .sub{color:var(--muted);font-size:.82rem;line-height:1.45;margin-top:6px}
+
+    .main{
+      display:grid;
+      gap:20px;
+      align-content:start;
+    }
+    .hero{
+      border-radius:28px;
+      padding:24px;
+      position:relative;
+      overflow:hidden;
+    }
+    .hero::after{
+      content:"";
+      position:absolute;inset:-2px -2px auto auto;
+      width:320px;height:320px;border-radius:50%;
+      background:radial-gradient(circle, rgba(110,231,255,.16), transparent 60%);
+      pointer-events:none;
+      transform:translate(18%, -18%);
+    }
+    .hero-top{
+      display:flex;justify-content:space-between;align-items:flex-start;gap:16px;position:relative;z-index:1;
+    }
+    .hero h2{
+      margin:8px 0 10px;
+      font-size:clamp(2rem,4.5vw,3.35rem);
+      line-height:1.02;
+      letter-spacing:-.04em;
+      max-width:11ch;
+    }
+    .hero p{
+      margin:0;
+      max-width:60ch;
+      color:var(--muted);
+      line-height:1.6;
+      font-size:1rem;
+    }
+    .chips{
+      display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;
+    }
+    .chip{
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+      color:#dbeafe;
+      border-radius:999px;
+      padding:8px 12px;
+      font-size:.82rem;
+    }
+    .hero-actions{
+      display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;
+    }
+    .btn{
+      border:none;
+      border-radius:14px;
+      padding:12px 16px;
+      cursor:pointer;
+      transition:.2s ease;
+      font-weight:700;
+      letter-spacing:.01em;
+    }
+    .btn.primary{
+      background:linear-gradient(135deg, var(--accent), var(--accent2));
+      color:#08101e;
+      box-shadow:0 14px 32px rgba(110,231,255,.18);
+    }
+    .btn.secondary{
+      background:rgba(255,255,255,.05);
+      border:1px solid var(--line);
+      color:var(--text);
+    }
+    .btn.ghost{
+      background:transparent;border:1px solid var(--line);color:var(--muted)
+    }
+    .btn:hover{transform:translateY(-1px)}
+    .metrics{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:14px;
+    }
+    .card{
+      border-radius:22px;
+      padding:18px;
+    }
+    .metric .k{
+      color:var(--muted);
+      font-size:.76rem;
+      text-transform:uppercase;
+      letter-spacing:.14em;
+    }
+    .metric .v{
+      margin-top:10px;
+      font-size:1.9rem;
+      font-weight:850;
+      letter-spacing:-.04em;
+    }
+    .metric .s{margin-top:6px;color:var(--muted);font-size:.86rem;line-height:1.4}
+    .metric.good{border-color:rgba(52,211,153,.16)}
+    .metric.good .v{color:#bbf7d0}
+    .metric.blue .v{color:#c5f3ff}
+    .metric.purple .v{color:#ddd6fe}
+    .metric.gold .v{color:#fde68a}
+
+    .grid{
+      display:grid;
+      grid-template-columns:1.2fr .8fr;
+      gap:20px;
+      align-items:start;
+    }
+    .section{
+      display:none;
+      gap:20px;
+    }
+    .section.active{display:grid}
+    .section.single{grid-template-columns:1fr}
+    .section.two{grid-template-columns:1fr 1fr}
+    .section.three{grid-template-columns:1.15fr .85fr}
+    .stack{display:grid;gap:20px}
+    .tabs{
+      display:flex;flex-wrap:wrap;gap:10px;
+      margin-bottom:14px;
+    }
+    .tab{
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+      color:var(--muted);
+      border-radius:999px;
+      padding:10px 14px;
+      cursor:pointer;
+    }
+    .tab.active{
+      background:linear-gradient(135deg, rgba(110,231,255,.16), rgba(167,139,250,.14));
+      color:var(--text);
+      border-color:var(--line2);
+    }
+    .title-row{
+      display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;
+    }
+    .title-row h3,.card h3{margin:0;font-size:1.05rem}
+    .title-row span,.caption{color:var(--muted);font-size:.84rem}
+    .form{
+      display:grid;
+      gap:12px;
+    }
+    .field{
+      display:grid;
+      gap:7px;
+    }
+    label{
+      font-size:.78rem;
+      text-transform:uppercase;
+      letter-spacing:.12em;
+      color:var(--muted);
+    }
+    input,textarea,select{
+      width:100%;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.04);
+      color:var(--text);
+      padding:12px 14px;
+      outline:none;
+    }
+    textarea{min-height:108px;resize:vertical}
+    input:focus,textarea:focus,select:focus{border-color:rgba(110,231,255,.5);box-shadow:0 0 0 4px rgba(110,231,255,.08)}
+    .row{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:12px;
+    }
+    .row.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .result{
+      min-height:100%;
+      display:grid;
+      gap:12px;
+    }
+    .output{
+      border-radius:18px;
+      border:1px solid var(--line);
+      background:rgba(3,7,18,.6);
+      padding:16px;
+      min-height:220px;
+      white-space:pre-wrap;
+      line-height:1.6;
+      color:#eff6ff;
+    }
+    .output.small{min-height:0}
+    .toolbar{
+      display:flex;flex-wrap:wrap;gap:10px;margin-top:2px
+    }
+    .toolbar .btn{padding:10px 14px;font-size:.9rem}
+    .list{
+      display:grid;
+      gap:12px;
+    }
+    .item{
+      padding:14px;
+      border-radius:18px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+      display:grid;
+      gap:6px;
+    }
+    .item-top{
+      display:flex;justify-content:space-between;gap:10px;align-items:center;
+    }
+    .pill{
+      font-size:.72rem;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      color:#dbeafe;
+      background:rgba(255,255,255,.03);
+    }
+    .pill.good{border-color:rgba(52,211,153,.3);color:#bbf7d0}
+    .pill.warn{border-color:rgba(251,191,36,.3);color:#fde68a}
+    .pill.bad{border-color:rgba(251,113,133,.3);color:#fecdd3}
+    .item h4{margin:0;font-size:.98rem}
+    .item p{margin:0;color:var(--muted);font-size:.88rem;line-height:1.45}
+    .stats-strip{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:10px;
+    }
+    .strip{
+      padding:14px;
+      border:1px solid var(--line);
+      border-radius:16px;
+      background:rgba(255,255,255,.03);
+    }
+    .strip .n{font-size:1.2rem;font-weight:800}
+    .strip .t{color:var(--muted);font-size:.8rem;margin-top:4px}
+    .footer{
+      color:var(--muted);
+      font-size:.8rem;
+      text-align:center;
+      padding:4px 0 0;
+    }
+    .hidden{display:none !important}
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom:20px;
+      transform:translateX(-50%) translateY(120%);
+      background:rgba(15,23,42,.95);
+      color:var(--text);
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding:12px 16px;
+      box-shadow:var(--shadow);
+      transition:.25s ease;
+      z-index:50;
+      pointer-events:none;
+    }
+    .toast.show{transform:translateX(-50%) translateY(0)}
+    .modal{
+      position:fixed;inset:0;
+      background:rgba(2,6,23,.72);
+      display:none;
+      place-items:center;
+      padding:20px;
+      z-index:60;
+    }
+    .modal.open{display:grid}
+    .modal-content{
+      width:min(920px,100%);
+      max-height:min(86vh,840px);
+      overflow:auto;
+      border-radius:26px;
+      padding:22px;
+    }
+    .modal-top{
+      display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px;
+    }
+    .modal-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:14px;
+    }
+    .tiny{
+      color:var(--muted);
+      font-size:.78rem;
+      line-height:1.5;
     }
 
-    /* ── Header ───────────────────────────────────────────── */
-    header {
-      width: 100%;
-      max-width: 440px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 0 8px;
+    @media (max-width: 1040px){
+      .shell{grid-template-columns:1fr}
+      .sidebar{position:relative;top:0;height:auto}
+      .metrics,.grid,.section.two,.section.three,.modal-grid,.stats-strip{grid-template-columns:1fr 1fr}
     }
-
-    .app-title {
-      font-size: 1.1rem;
-      font-weight: 700;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--accent);
-      text-shadow: var(--glow);
-    }
-
-    /* ── Unit toggle ──────────────────────────────────────── */
-    .unit-toggle {
-      display: flex;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      overflow: hidden;
-    }
-
-    .unit-toggle button {
-      background: transparent;
-      border: none;
-      color: var(--muted);
-      font-size: 0.75rem;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      padding: 5px 14px;
-      cursor: pointer;
-      transition: color 0.2s, background 0.2s;
-    }
-
-    .unit-toggle button.active {
-      background: var(--accent);
-      color: #000;
-      border-radius: 20px;
-    }
-
-    /* ── Speedometer canvas ───────────────────────────────── */
-    .gauge-wrap {
-      position: relative;
-      width: min(92vw, 340px);
-      margin: 8px auto 0;
-    }
-
-    #gaugeCanvas {
-      width: 100%;
-      height: auto;
-      filter: drop-shadow(0 0 18px rgba(0,212,255,0.25));
-    }
-
-    /* ── Speed readout ────────────────────────────────────── */
-    .speed-readout {
-      position: absolute;
-      bottom: 18%;
-      left: 50%;
-      transform: translateX(-50%);
-      text-align: center;
-      pointer-events: none;
-    }
-
-    .speed-value {
-      font-size: clamp(3.5rem, 16vw, 5.5rem);
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      line-height: 1;
-      color: #fff;
-      text-shadow: 0 0 30px rgba(0,212,255,0.6);
-      font-variant-numeric: tabular-nums;
-    }
-
-    .speed-unit {
-      font-size: 1.1rem;
-      font-weight: 600;
-      letter-spacing: 0.2em;
-      color: var(--accent);
-      margin-top: 2px;
-    }
-
-    /* ── Status bar ───────────────────────────────────────── */
-    .status-bar {
-      width: 100%;
-      max-width: 440px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin: 10px 0;
-      min-height: 28px;
-    }
-
-    .status-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--muted);
-      flex-shrink: 0;
-      transition: background 0.4s;
-    }
-
-    .status-dot.active  { background: var(--accent2); box-shadow: var(--glow2); animation: pulse 2s infinite; }
-    .status-dot.error   { background: var(--warn); }
-    .status-dot.waiting { background: var(--accent); animation: pulse 1.2s infinite; }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50%       { opacity: 0.4; }
-    }
-
-    .status-text {
-      font-size: 0.8rem;
-      color: var(--muted);
-      flex: 1;
-    }
-
-    .accuracy-badge {
-      font-size: 0.72rem;
-      font-weight: 600;
-      padding: 3px 9px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      color: var(--muted);
-      transition: color 0.4s, border-color 0.4s;
-    }
-
-    .accuracy-badge.good   { color: var(--accent2); border-color: var(--accent2); }
-    .accuracy-badge.ok     { color: var(--accent);  border-color: var(--accent);  }
-    .accuracy-badge.poor   { color: var(--warn);    border-color: var(--warn);    }
-
-    /* ── Stats grid ───────────────────────────────────────── */
-    .stats-grid {
-      width: 100%;
-      max-width: 440px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: 4px;
-    }
-
-    .stat-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 14px 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      transition: border-color 0.4s;
-    }
-
-    .stat-card.highlight {
-      border-color: rgba(0,212,255,0.4);
-      background: rgba(0,212,255,0.04);
-    }
-
-    .stat-label {
-      font-size: 0.7rem;
-      font-weight: 600;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-
-    .stat-value {
-      font-size: 1.55rem;
-      font-weight: 700;
-      line-height: 1.1;
-      color: #fff;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .stat-sub {
-      font-size: 0.68rem;
-      color: var(--muted);
-      margin-top: 1px;
-    }
-
-    /* ── Heading compass ──────────────────────────────────── */
-    .compass-wrap {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .compass-ring {
-      width: 28px;
-      height: 28px;
-      border: 2px solid var(--border);
-      border-radius: 50%;
-      position: relative;
-      flex-shrink: 0;
-    }
-
-    .compass-needle {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 2px;
-      height: 10px;
-      background: var(--accent);
-      transform-origin: bottom center;
-      transform: translate(-50%, -100%) rotate(0deg);
-      transition: transform 0.6s cubic-bezier(0.34,1.56,0.64,1);
-      border-radius: 1px;
-    }
-
-    .compass-needle::after {
-      content: '';
-      position: absolute;
-      bottom: -10px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 2px;
-      height: 10px;
-      background: var(--muted);
-      border-radius: 1px;
-    }
-
-    /* ── Start/Stop button ────────────────────────────────── */
-    .btn-wrap {
-      width: 100%;
-      max-width: 440px;
-      margin-top: 14px;
-    }
-
-    #trackBtn {
-      width: 100%;
-      padding: 16px;
-      border: none;
-      border-radius: 16px;
-      font-size: 1rem;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: transform 0.1s, box-shadow 0.2s, background 0.2s;
-      background: linear-gradient(135deg, var(--accent), #0099bb);
-      color: #000;
-      box-shadow: 0 4px 24px rgba(0,212,255,0.35);
-    }
-
-    #trackBtn:active { transform: scale(0.97); }
-    #trackBtn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    #trackBtn.stop {
-      background: linear-gradient(135deg, var(--warn), #c94010);
-      box-shadow: 0 4px 24px rgba(255,107,53,0.35);
-      color: #fff;
-    }
-
-    /* ── Reset button ─────────────────────────────────────── */
-    #resetBtn {
-      width: 100%;
-      margin-top: 8px;
-      padding: 11px;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      background: transparent;
-      color: var(--muted);
-      font-size: 0.8rem;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: color 0.2s, border-color 0.2s;
-    }
-
-    #resetBtn:hover { color: var(--text); border-color: var(--text); }
-
-    /* ── Speed history sparkline ──────────────────────────── */
-    .history-card {
-      grid-column: 1 / -1;
-      padding: 14px 16px 10px;
-    }
-
-    #sparkCanvas {
-      width: 100%;
-      height: 48px;
-      margin-top: 8px;
-      border-radius: 6px;
-    }
-
-    /* ── Notification / permission prompt ────────────────── */
-    .perm-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(10,14,26,0.96);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 20px;
-      padding: 32px;
-      z-index: 100;
-      backdrop-filter: blur(6px);
-    }
-
-    .perm-overlay.hidden { display: none; }
-
-    .perm-icon {
-      font-size: 3.5rem;
-      line-height: 1;
-    }
-
-    .perm-title {
-      font-size: 1.4rem;
-      font-weight: 700;
-      text-align: center;
-    }
-
-    .perm-desc {
-      font-size: 0.9rem;
-      color: var(--muted);
-      text-align: center;
-      max-width: 300px;
-      line-height: 1.6;
-    }
-
-    #permBtn {
-      padding: 14px 40px;
-      border: none;
-      border-radius: 16px;
-      background: var(--accent);
-      color: #000;
-      font-size: 1rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      cursor: pointer;
-      box-shadow: 0 4px 24px rgba(0,212,255,0.4);
-    }
-
-    /* ── Landscape tweaks ─────────────────────────────────── */
-    @media (orientation: landscape) and (max-height: 500px) {
-      .gauge-wrap { width: min(45vw, 220px); margin: 0 auto; }
-      body        { flex-direction: row; flex-wrap: wrap; align-items: flex-start; }
-      header, .status-bar, .btn-wrap { max-width: 100%; }
-      .stats-grid { max-width: 100%; grid-template-columns: repeat(4, 1fr); }
+    @media (max-width: 760px){
+      .shell{padding:14px;gap:14px}
+      .hero-top,.title-row,.item-top,.modal-top{flex-direction:column;align-items:flex-start}
+      .metrics,.grid,.row,.row.three,.section.two,.section.three,.modal-grid,.stats-strip{grid-template-columns:1fr}
+      .hero h2{max-width:100%}
+      .sidebar{border-radius:24px;padding:16px}
+      .hero,.card,.modal-content{border-radius:22px;padding:18px}
+      .output{min-height:180px}
     }
   </style>
 </head>
 <body>
-
-  <!-- Permission overlay shown before first use -->
-  <div class="perm-overlay" id="permOverlay">
-    <div class="perm-icon">📍</div>
-    <div class="perm-title">Location Access Required</div>
-    <div class="perm-desc">
-      Speed Tracker uses your device's GPS to calculate your exact speed in real-time.
-      Your location is never stored or shared.
-    </div>
-    <button id="permBtn">Enable GPS Tracking</button>
-  </div>
-
-  <!-- ── Header ──────────────────────────────────────── -->
-  <header>
-    <div class="app-title">⚡ Speed Tracker</div>
-    <div class="unit-toggle">
-      <button id="btnMph" class="active" onclick="setUnit('mph')">MPH</button>
-      <button id="btnKph" onclick="setUnit('kph')">KPH</button>
-    </div>
-  </header>
-
-  <!-- ── Gauge ───────────────────────────────────────── -->
-  <div class="gauge-wrap">
-    <canvas id="gaugeCanvas" width="340" height="220"></canvas>
-    <div class="speed-readout">
-      <div class="speed-value" id="speedVal">0</div>
-      <div class="speed-unit" id="speedUnitLbl">MPH</div>
-    </div>
-  </div>
-
-  <!-- ── GPS status ──────────────────────────────────── -->
-  <div class="status-bar">
-    <div class="status-dot" id="statusDot"></div>
-    <span class="status-text" id="statusText">Tap Start to begin tracking</span>
-    <span class="accuracy-badge" id="accuracyBadge">GPS: —</span>
-  </div>
-
-  <!-- ── Stats ───────────────────────────────────────── -->
-  <div class="stats-grid">
-    <!-- Top speed -->
-    <div class="stat-card" id="cardMax">
-      <div class="stat-label">Top Speed</div>
-      <div class="stat-value" id="maxSpeed">0</div>
-      <div class="stat-sub" id="maxSpeedUnit">MPH</div>
-    </div>
-
-    <!-- Average -->
-    <div class="stat-card">
-      <div class="stat-label">Avg Speed</div>
-      <div class="stat-value" id="avgSpeed">0</div>
-      <div class="stat-sub" id="avgSpeedUnit">MPH (trip)</div>
-    </div>
-
-    <!-- Heading -->
-    <div class="stat-card">
-      <div class="stat-label">Heading</div>
-      <div class="compass-wrap">
-        <div class="compass-ring">
-          <div class="compass-needle" id="compassNeedle"></div>
-        </div>
+  <div class="shell">
+    <aside class="sidebar panel">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
         <div>
-          <div class="stat-value" style="font-size:1.2rem" id="headingVal">—</div>
-          <div class="stat-sub" id="headingDir">Waiting…</div>
+          <h1>PulseDesk AI</h1>
+          <p>Business tools that help you reply faster, close deals, and stay organized.</p>
+        </div>
+      </div>
+
+      <nav class="nav" id="nav">
+        <button class="active" data-section="dashboard"><span class="icon">▣</span> Dashboard</button>
+        <button data-section="writer"><span class="icon">✦</span> AI Writer</button>
+        <button data-section="quotes"><span class="icon">⌁</span> Quotes</button>
+        <button data-section="crm"><span class="icon">◌</span> Clients</button>
+      </nav>
+
+      <div class="mini">
+        <div class="label">Today</div>
+        <div class="value" id="todayValue">0</div>
+        <div class="sub" id="todaySub">tasks completed, replies sent, and deals moved forward.</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="hero card">
+        <div class="hero-top">
+          <div>
+            <div class="caption">AI-powered business assistant</div>
+            <h2>Run your work like a premium product.</h2>
+            <p>
+              PulseDesk AI turns messy notes into clean emails, quotes, follow-ups, and action plans.
+              It is built as a polished starter business tool that can become the front door to a real service.
+            </p>
+            <div class="chips">
+              <span class="chip">Email + proposal writer</span>
+              <span class="chip">Quote calculator</span>
+              <span class="chip">Customer tracker</span>
+              <span class="chip">Saved drafts</span>
+              <span class="chip">One-click copy</span>
+            </div>
+          </div>
+          <div class="hero-actions">
+            <button class="btn secondary" id="demoFill">Load demo</button>
+            <button class="btn primary" id="openComposer">Create draft</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="metrics">
+        <div class="card metric blue">
+          <div class="k">Pipeline value</div>
+          <div class="v" id="mPipeline">$0</div>
+          <div class="s">Estimated value of active leads and projects.</div>
+        </div>
+        <div class="card metric purple">
+          <div class="k">Open follow-ups</div>
+          <div class="v" id="mFollowups">0</div>
+          <div class="s">People waiting for a response or next step.</div>
+        </div>
+        <div class="card metric good">
+          <div class="k">Win rate</div>
+          <div class="v" id="mWinRate">0%</div>
+          <div class="s">Based on your saved client statuses.</div>
+        </div>
+        <div class="card metric gold">
+          <div class="k">This week</div>
+          <div class="v" id="mWeek">$0</div>
+          <div class="s">Revenue that your business could track this week.</div>
+        </div>
+      </section>
+
+      <section id="dashboard" class="section active single">
+        <div class="grid">
+          <div class="stack">
+            <div class="card">
+              <div class="title-row">
+                <h3>Smart actions</h3>
+                <span>Fast starters for busy days</span>
+              </div>
+              <div class="tabs" id="quickTabs">
+                <button class="tab active" data-template="email">Email</button>
+                <button class="tab" data-template="proposal">Proposal</button>
+                <button class="tab" data-template="followup">Follow-up</button>
+                <button class="tab" data-template="post">Post</button>
+              </div>
+              <div class="form">
+                <div class="row">
+                  <div class="field">
+                    <label>Who is this for?</label>
+                    <input id="quickClient" placeholder="Example: Jordan / Sunset Bakery" />
+                  </div>
+                  <div class="field">
+                    <label>Goal</label>
+                    <input id="quickGoal" placeholder="Example: book a discovery call" />
+                  </div>
+                </div>
+                <div class="field">
+                  <label>Notes</label>
+                  <textarea id="quickNotes" placeholder="Add details, pricing, deadlines, or anything you want included."></textarea>
+                </div>
+                <div class="toolbar">
+                  <button class="btn primary" id="generateQuick">Generate draft</button>
+                  <button class="btn secondary" id="saveDraft">Save to history</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="title-row">
+                <h3>Draft output</h3>
+                <span id="draftTypeLabel">Email draft</span>
+              </div>
+              <div class="output" id="draftOutput">Your polished draft will appear here.</div>
+              <div class="toolbar">
+                <button class="btn secondary" id="copyDraft">Copy text</button>
+                <button class="btn ghost" id="clearDraft">Clear</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="stack">
+            <div class="card">
+              <div class="title-row">
+                <h3>Today’s plan</h3>
+                <span>Focus list</span>
+              </div>
+              <div class="list" id="taskList"></div>
+            </div>
+
+            <div class="card">
+              <div class="title-row">
+                <h3>Recent activity</h3>
+                <span>Saved locally</span>
+              </div>
+              <div class="list" id="activityList"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="writer" class="section two">
+        <div class="card">
+          <div class="title-row">
+            <h3>AI writer</h3>
+            <span>Create reusable business copy</span>
+          </div>
+          <div class="form">
+            <div class="row">
+              <div class="field">
+                <label>Type</label>
+                <select id="writerType">
+                  <option value="email">Client email</option>
+                  <option value="proposal">Proposal intro</option>
+                  <option value="followup">Follow-up message</option>
+                  <option value="sales">Sales page copy</option>
+                  <option value="social">Social post</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Tone</label>
+                <select id="writerTone">
+                  <option>Professional</option>
+                  <option>Friendly</option>
+                  <option>Confident</option>
+                  <option>Warm</option>
+                  <option>Concise</option>
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label>Audience</label>
+              <input id="writerAudience" placeholder="Example: small business owners" />
+            </div>
+            <div class="field">
+              <label>What happened / what do you need?</label>
+              <textarea id="writerDetails" placeholder="Example: The client asked for a redesign and wants a quote by Friday."></textarea>
+            </div>
+            <div class="row">
+              <div class="field">
+                <label>Call to action</label>
+                <input id="writerCTA" placeholder="Example: reply with approval" />
+              </div>
+              <div class="field">
+                <label>Extra note</label>
+                <input id="writerExtra" placeholder="Example: mention quick turnaround" />
+              </div>
+            </div>
+            <div class="toolbar">
+              <button class="btn primary" id="generateWriter">Generate</button>
+              <button class="btn secondary" id="copyWriter">Copy</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="title-row">
+            <h3>Writer preview</h3>
+            <span id="writerBadge">Ready</span>
+          </div>
+          <div class="output" id="writerOutput">Fill in the form and generate a polished draft.</div>
+          <div class="footer">Tips: use this for replies, outreach, and product descriptions.</div>
+        </div>
+      </section>
+
+      <section id="quotes" class="section two">
+        <div class="card">
+          <div class="title-row">
+            <h3>Quote builder</h3>
+            <span>Price work with confidence</span>
+          </div>
+          <div class="form">
+            <div class="row three">
+              <div class="field">
+                <label>Hours</label>
+                <input id="qHours" type="number" min="0" step="0.25" value="12" />
+              </div>
+              <div class="field">
+                <label>Hourly rate</label>
+                <input id="qRate" type="number" min="0" step="1" value="65" />
+              </div>
+              <div class="field">
+                <label>Material / extras</label>
+                <input id="qExtras" type="number" min="0" step="1" value="25" />
+              </div>
+            </div>
+            <div class="row">
+              <div class="field">
+                <label>Profit margin %</label>
+                <input id="qMargin" type="number" min="0" step="1" value="35" />
+              </div>
+              <div class="field">
+                <label>Discount %</label>
+                <input id="qDiscount" type="number" min="0" step="1" value="0" />
+              </div>
+            </div>
+            <div class="field">
+              <label>Project name</label>
+              <input id="qProject" placeholder="Example: Website refresh for local shop" />
+            </div>
+            <div class="toolbar">
+              <button class="btn primary" id="calcQuote">Build quote</button>
+              <button class="btn secondary" id="copyQuote">Copy quote</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="title-row">
+            <h3>Quote result</h3>
+            <span id="quoteBadge">Pricing preview</span>
+          </div>
+          <div class="stats-strip" style="margin-bottom:12px">
+            <div class="strip"><div class="n" id="qBase">$0</div><div class="t">Base cost</div></div>
+            <div class="strip"><div class="n" id="qPrice">$0</div><div class="t">Suggested price</div></div>
+            <div class="strip"><div class="n" id="qProfit">$0</div><div class="t">Expected profit</div></div>
+          </div>
+          <div class="output small" id="quoteOutput">Your quote summary will show here.</div>
+        </div>
+      </section>
+
+      <section id="crm" class="section two">
+        <div class="card">
+          <div class="title-row">
+            <h3>Clients</h3>
+            <span>Simple CRM</span>
+          </div>
+          <div class="form">
+            <div class="row">
+              <div class="field">
+                <label>Name</label>
+                <input id="cName" placeholder="Client name" />
+              </div>
+              <div class="field">
+                <label>Status</label>
+                <select id="cStatus">
+                  <option value="lead">Lead</option>
+                  <option value="active">Active</option>
+                  <option value="waiting">Waiting</option>
+                  <option value="won">Won</option>
+                </select>
+              </div>
+            </div>
+            <div class="row">
+              <div class="field">
+                <label>Project value</label>
+                <input id="cValue" type="number" min="0" step="1" value="500" />
+              </div>
+              <div class="field">
+                <label>Next step</label>
+                <input id="cNext" placeholder="Example: send estimate" />
+              </div>
+            </div>
+            <div class="field">
+              <label>Notes</label>
+              <textarea id="cNotes" placeholder="Anything you need to remember about this client."></textarea>
+            </div>
+            <div class="toolbar">
+              <button class="btn primary" id="addClient">Add client</button>
+              <button class="btn secondary" id="resetAll">Reset data</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="title-row">
+            <h3>Client board</h3>
+            <span id="clientCount">0 clients</span>
+          </div>
+          <div class="list" id="clientList"></div>
+        </div>
+      </section>
+
+      <div class="footer">Built as a fast, polished starter business tool. Everything saves locally in your browser.</div>
+    </main>
+  </div>
+
+  <div class="toast" id="toast">Copied</div>
+
+  <div class="modal" id="modal">
+    <div class="modal-content">
+      <div class="modal-top">
+        <div>
+          <h3 style="margin:0">New draft</h3>
+          <div class="tiny">Pick a type and fill the form. The app will create a clean, ready-to-send draft.</div>
+        </div>
+        <button class="btn ghost" id="closeModal">Close</button>
+      </div>
+      <div class="modal-grid">
+        <div class="card">
+          <div class="title-row">
+            <h3>Best uses</h3>
+            <span>Built for speed</span>
+          </div>
+          <div class="list">
+            <div class="item"><h4>Lead follow-up</h4><p>Send a fast reply after someone asks for pricing or information.</p></div>
+            <div class="item"><h4>Client proposal</h4><p>Turn notes into a clear plan with scope and next steps.</p></div>
+            <div class="item"><h4>Product marketing</h4><p>Write polished copy for services, landing pages, and posts.</p></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="title-row">
+            <h3>How to use</h3>
+            <span>Simple workflow</span>
+          </div>
+          <div class="list">
+            <div class="item"><h4>1. Fill the fields</h4><p>Drop in client details, goals, and notes.</p></div>
+            <div class="item"><h4>2. Generate</h4><p>Get a clean draft instantly.</p></div>
+            <div class="item"><h4>3. Copy or save</h4><p>Move it into your real workflow right away.</p></div>
+          </div>
         </div>
       </div>
     </div>
-
-    <!-- Altitude -->
-    <div class="stat-card">
-      <div class="stat-label">Altitude</div>
-      <div class="stat-value" id="altVal">—</div>
-      <div class="stat-sub">meters (MSL)</div>
-    </div>
-
-    <!-- Sparkline -->
-    <div class="stat-card history-card">
-      <div class="stat-label">Speed History (last 60 s)</div>
-      <canvas id="sparkCanvas" width="800" height="96"></canvas>
-    </div>
   </div>
 
-  <!-- ── Controls ────────────────────────────────────── -->
-  <div class="btn-wrap">
-    <button id="trackBtn" onclick="toggleTracking()">Start Tracking</button>
-    <button id="resetBtn" onclick="resetStats()">Reset Stats</button>
-  </div>
+  <script>
+    const STORAGE_KEY = 'pulsedesk-ai-v1';
 
-<script>
-/* ═══════════════════════════════════════════════════════
-   Speed Tracker — core logic
-   ═══════════════════════════════════════════════════════ */
+    const demoState = {
+      clients: [
+        {name:'Sunset Bakery', status:'active', value:1400, next:'Send website revision', notes:'Likes clear pricing and quick turnarounds.'},
+        {name:'Mia Carter', status:'waiting', value:620, next:'Follow up on quote', notes:'Asked for a smaller starter package.'},
+        {name:'North Ridge Lawn', status:'won', value:2100, next:'Schedule kickoff', notes:'Approved proposal and wants a Monday start.'}
+      ],
+      history: [
+        {type:'Email', text:'Thanks for reaching out — I reviewed your request and I put together a clean next step plan.'},
+        {type:'Quote', text:'Suggested quote prepared for a website refresh with a 35% margin.'}
+      ]
+    };
 
-const CANVAS_W = 340, CANVAS_H = 220;
-const ARC_R    = 130;            // gauge arc radius (design units)
-const ARC_CX   = 170, ARC_CY = 175;
-const ARC_START = Math.PI * 1.1; // left end of arc
-const ARC_END   = Math.PI * 1.9; // right end (almost full bottom circle)
-const MAX_SPEED_GAUGE = 120;     // the full-scale value shown on gauge
+    const els = {
+      nav: document.getElementById('nav'),
+      sections: [...document.querySelectorAll('.section')],
+      metrics: {
+        pipeline: document.getElementById('mPipeline'),
+        followups: document.getElementById('mFollowups'),
+        winrate: document.getElementById('mWinRate'),
+        week: document.getElementById('mWeek'),
+      },
+      todayValue: document.getElementById('todayValue'),
+      todaySub: document.getElementById('todaySub'),
+      taskList: document.getElementById('taskList'),
+      activityList: document.getElementById('activityList'),
+      clientList: document.getElementById('clientList'),
+      clientCount: document.getElementById('clientCount'),
+      toast: document.getElementById('toast'),
+      modal: document.getElementById('modal'),
+      demoFill: document.getElementById('demoFill'),
+      openComposer: document.getElementById('openComposer'),
+      closeModal: document.getElementById('closeModal'),
+      generateQuick: document.getElementById('generateQuick'),
+      saveDraft: document.getElementById('saveDraft'),
+      quickClient: document.getElementById('quickClient'),
+      quickGoal: document.getElementById('quickGoal'),
+      quickNotes: document.getElementById('quickNotes'),
+      draftOutput: document.getElementById('draftOutput'),
+      draftTypeLabel: document.getElementById('draftTypeLabel'),
+      copyDraft: document.getElementById('copyDraft'),
+      clearDraft: document.getElementById('clearDraft'),
+      quickTabs: document.getElementById('quickTabs'),
+      writerType: document.getElementById('writerType'),
+      writerTone: document.getElementById('writerTone'),
+      writerAudience: document.getElementById('writerAudience'),
+      writerDetails: document.getElementById('writerDetails'),
+      writerCTA: document.getElementById('writerCTA'),
+      writerExtra: document.getElementById('writerExtra'),
+      generateWriter: document.getElementById('generateWriter'),
+      copyWriter: document.getElementById('copyWriter'),
+      writerOutput: document.getElementById('writerOutput'),
+      writerBadge: document.getElementById('writerBadge'),
+      qHours: document.getElementById('qHours'),
+      qRate: document.getElementById('qRate'),
+      qExtras: document.getElementById('qExtras'),
+      qMargin: document.getElementById('qMargin'),
+      qDiscount: document.getElementById('qDiscount'),
+      qProject: document.getElementById('qProject'),
+      calcQuote: document.getElementById('calcQuote'),
+      copyQuote: document.getElementById('copyQuote'),
+      qBase: document.getElementById('qBase'),
+      qPrice: document.getElementById('qPrice'),
+      qProfit: document.getElementById('qProfit'),
+      quoteOutput: document.getElementById('quoteOutput'),
+      addClient: document.getElementById('addClient'),
+      resetAll: document.getElementById('resetAll'),
+      cName: document.getElementById('cName'),
+      cStatus: document.getElementById('cStatus'),
+      cValue: document.getElementById('cValue'),
+      cNext: document.getElementById('cNext'),
+      cNotes: document.getElementById('cNotes'),
+    };
 
-// ── State ─────────────────────────────────────────────
-let unit         = 'mph';
-let tracking     = false;
-let watchId      = null;
-let currentSpeed = 0;   // in chosen unit
-let displaySpeed = 0;   // interpolated for animation
-let maxSpeedVal  = 0;
-let speedSamples  = [];  // raw m/s samples for trip average
-let speedHistory  = [];  // last-60-s samples (in display unit) for sparkline
-let raf          = null;
-let lastTimestamp = null;
-let prevCoords    = null; // previous GPS coords for speed calculation fallback
-let prevPosTime   = null; // timestamp (ms) of previous GPS fix
+    const state = loadState();
 
-// ── DOM refs ──────────────────────────────────────────
-const gaugeCanvas  = document.getElementById('gaugeCanvas');
-const gCtx         = gaugeCanvas.getContext('2d');
-const sparkCanvas  = document.getElementById('sparkCanvas');
-const sCtx         = sparkCanvas.getContext('2d');
-const speedValEl   = document.getElementById('speedVal');
-const speedUnitEl  = document.getElementById('speedUnitLbl');
-const statusDot    = document.getElementById('statusDot');
-const statusText   = document.getElementById('statusText');
-const accuracyBadge= document.getElementById('accuracyBadge');
-const maxSpeedEl   = document.getElementById('maxSpeed');
-const maxSpeedUnitEl= document.getElementById('maxSpeedUnit');
-const avgSpeedEl   = document.getElementById('avgSpeed');
-const avgSpeedUnitEl= document.getElementById('avgSpeedUnit');
-const headingVal   = document.getElementById('headingVal');
-const headingDir   = document.getElementById('headingDir');
-const compassNeedle= document.getElementById('compassNeedle');
-const altVal       = document.getElementById('altVal');
-const trackBtn     = document.getElementById('trackBtn');
-const permOverlay  = document.getElementById('permOverlay');
-
-// ── Helpers ────────────────────────────────────────────
-function mpsToMph(v) { return v * 2.23694; }
-function mpsToKph(v) { return v * 3.6;     }
-function toUnit(mps)  {
-  return unit === 'mph' ? mpsToMph(mps) : mpsToKph(mps);
-}
-
-function bearingToCompass(deg) {
-  const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE',
-                'S','SSW','SW','WSW','W','WNW','NW','NNW'];
-  return dirs[Math.round(deg / 22.5) % 16];
-}
-
-function fmtSpeed(v) { return Math.round(v).toString(); }
-
-// Haversine distance between two lat/lon points, returns metres
-function haversineMeters(lat1, lon1, lat2, lon2) {
-  const R    = 6371000;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a    = Math.sin(dLat / 2) * Math.sin(dLat / 2)
-             + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180)
-             * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-// ── Unit toggle ────────────────────────────────────────
-function setUnit(u) {
-  unit = u;
-  document.getElementById('btnMph').classList.toggle('active', u === 'mph');
-  document.getElementById('btnKph').classList.toggle('active', u === 'kph');
-  speedUnitEl.textContent   = u.toUpperCase();
-  maxSpeedUnitEl.textContent = u.toUpperCase();
-  avgSpeedUnitEl.textContent = u.toUpperCase() + ' (trip)';
-  // Convert stored values
-  if (u === 'mph') {
-    maxSpeedVal  = mpsToMph(maxRawMps);
-    currentSpeed  = toUnit(rawMps);
-    speedHistory  = rawHistory.map(h => ({ t: h.t, v: toUnit(h.v) }));
-  } else {
-    maxSpeedVal   = mpsToKph(maxRawMps);
-    currentSpeed  = toUnit(rawMps);
-    speedHistory  = rawHistory.map(h => ({ t: h.t, v: toUnit(h.v) }));
-  }
-  maxSpeedEl.textContent = fmtSpeed(maxSpeedVal);
-  updateAvg();
-}
-
-// ── Raw m/s store ──────────────────────────────────────
-let rawMps     = 0;
-let maxRawMps  = 0;
-let rawHistory = [];  // { t, v } in m/s for sparkline source
-
-// ── Geolocation ────────────────────────────────────────
-function startTracking() {
-  if (!('geolocation' in navigator)) {
-    setStatus('error', '⚠ Geolocation not supported on this device.');
-    return;
-  }
-
-  setStatus('waiting', 'Acquiring GPS signal…');
-  trackBtn.disabled = true;
-
-  watchId = navigator.geolocation.watchPosition(
-    onPosition,
-    onGeoError,
-    {
-      enableHighAccuracy: true,
-      maximumAge:         0,
-      timeout:            15000
+    function loadState(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if(raw){
+          const parsed = JSON.parse(raw);
+          return {
+            clients: Array.isArray(parsed.clients) ? parsed.clients : structuredClone(demoState.clients),
+            history: Array.isArray(parsed.history) ? parsed.history : structuredClone(demoState.history),
+            draftType: parsed.draftType || 'email',
+            lastDraft: parsed.lastDraft || '',
+          };
+        }
+      }catch(e){}
+      return {
+        clients: structuredClone(demoState.clients),
+        history: structuredClone(demoState.history),
+        draftType: 'email',
+        lastDraft: ''
+      };
     }
-  );
-}
 
-function stopTracking() {
-  if (watchId !== null) {
-    navigator.geolocation.clearWatch(watchId);
-    watchId = null;
-  }
-  tracking    = false;
-  prevCoords  = null;
-  prevPosTime = null;
-  setStatus('idle', 'Tracking stopped');
-  trackBtn.textContent = 'Start Tracking';
-  trackBtn.classList.remove('stop');
-  trackBtn.disabled = false;
-}
-
-function onPosition(pos) {
-  if (!tracking) {
-    // First fix — we're live
-    tracking = true;
-    trackBtn.disabled    = false;
-    trackBtn.textContent = 'Stop Tracking';
-    trackBtn.classList.add('stop');
-  }
-
-  const { speed, accuracy, heading, altitude, latitude, longitude } = pos.coords;
-
-  // Use native speed when available; fall back to distance/time calculation
-  let mps;
-  if (speed !== null && speed >= 0) {
-    mps = speed;
-  } else if (prevCoords !== null) {
-    const dt = (pos.timestamp - prevPosTime) / 1000; // seconds
-    if (dt > 0) {
-      const dist = haversineMeters(prevCoords.lat, prevCoords.lon, latitude, longitude);
-      mps = dist / dt;
-    } else {
-      mps = 0;
+    function saveState(){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     }
-  } else {
-    mps = 0;
-  }
-  prevCoords  = { lat: latitude, lon: longitude };
-  prevPosTime = pos.timestamp;
 
-  rawMps       = mps;
-  currentSpeed = toUnit(mps);
-
-  // Max speed
-  if (mps > maxRawMps) {
-    maxRawMps  = mps;
-    maxSpeedVal = toUnit(mps);
-    maxSpeedEl.textContent = fmtSpeed(maxSpeedVal);
-    document.getElementById('cardMax').classList.add('highlight');
-    setTimeout(() => document.getElementById('cardMax').classList.remove('highlight'), 800);
-  }
-
-  // History (keep last 60 seconds)
-  const now = Date.now();
-  rawHistory.push({ t: now, v: mps });
-  rawHistory    = rawHistory.filter(h => now - h.t <= 60000);
-  speedHistory  = rawHistory.map(h => ({ t: h.t, v: toUnit(h.v) }));
-
-  // Samples for average (unlimited during trip)
-  speedSamples.push(mps);
-  updateAvg();
-
-  // Heading
-  if (heading !== null && heading >= 0) {
-    const deg = Math.round(heading);
-    headingVal.textContent  = deg + '°';
-    headingDir.textContent  = bearingToCompass(deg);
-    compassNeedle.style.transform = `translate(-50%, -100%) rotate(${deg}deg)`;
-  } else {
-    headingVal.textContent = '—';
-    headingDir.textContent = 'No compass data';
-  }
-
-  // Altitude
-  altVal.textContent = altitude !== null ? Math.round(altitude) + ' m' : '—';
-
-  // Accuracy badge
-  updateAccuracy(accuracy);
-
-  // Status
-  setStatus('active', 'GPS active — high accuracy');
-}
-
-function onGeoError(err) {
-  const msgs = {
-    1: 'Permission denied. Please allow location access.',
-    2: 'Position unavailable. Check your GPS signal.',
-    3: 'GPS timeout. Retrying…',
-  };
-  const msg = msgs[err.code] || 'Unknown GPS error.';
-
-  if (err.code === 1) {
-    // Permission denied — fully stop and show error
-    stopTracking();
-    setStatus('error', msg);
-    return;
-  }
-
-  // For transient errors (position unavailable / timeout) clean up so the
-  // button works correctly when the user taps it again.
-  if (watchId !== null) {
-    navigator.geolocation.clearWatch(watchId);
-    watchId = null;
-  }
-  tracking = false;
-  trackBtn.textContent = 'Start Tracking';
-  trackBtn.classList.remove('stop');
-  trackBtn.disabled = false;
-  setStatus('error', msg);
-}
-
-function updateAccuracy(acc) {
-  if (acc === null || acc === undefined) {
-    accuracyBadge.textContent = 'GPS: —';
-    accuracyBadge.className   = 'accuracy-badge';
-    return;
-  }
-  const m = Math.round(acc);
-  accuracyBadge.textContent = `±${m} m`;
-  if (acc <= 10) {
-    accuracyBadge.className = 'accuracy-badge good';
-  } else if (acc <= 30) {
-    accuracyBadge.className = 'accuracy-badge ok';
-  } else {
-    accuracyBadge.className = 'accuracy-badge poor';
-  }
-}
-
-function updateAvg() {
-  if (speedSamples.length === 0) { avgSpeedEl.textContent = '0'; return; }
-  const sum = speedSamples.reduce((a, b) => a + b, 0);
-  avgSpeedEl.textContent = fmtSpeed(toUnit(sum / speedSamples.length));
-  avgSpeedUnitEl.textContent = unit.toUpperCase() + ' (trip)';
-}
-
-// ── Status helpers ─────────────────────────────────────
-function setStatus(type, msg) {
-  statusText.textContent = msg;
-  statusDot.className    = 'status-dot';
-  if (type === 'active')  statusDot.classList.add('active');
-  if (type === 'error')   statusDot.classList.add('error');
-  if (type === 'waiting') statusDot.classList.add('waiting');
-}
-
-// ── Toggle ─────────────────────────────────────────────
-function toggleTracking() {
-  if (tracking || watchId !== null) {
-    stopTracking();
-  } else {
-    permOverlay.classList.add('hidden');
-    startTracking();
-  }
-}
-
-function resetStats() {
-  maxRawMps    = 0;
-  maxSpeedVal  = 0;
-  speedSamples = [];
-  rawHistory   = [];
-  speedHistory = [];
-  currentSpeed = 0;
-  displaySpeed = 0;
-  rawMps       = 0;
-  prevCoords   = null;
-  prevPosTime  = null;
-  maxSpeedEl.textContent = '0';
-  avgSpeedEl.textContent = '0';
-  altVal.textContent     = '—';
-  headingVal.textContent = '—';
-  headingDir.textContent = 'Waiting…';
-  speedValEl.textContent = '0';
-  updateAccuracy(null);
-}
-
-// ── Permission overlay ─────────────────────────────────
-document.getElementById('permBtn').addEventListener('click', () => {
-  permOverlay.classList.add('hidden');
-  startTracking();
-});
-
-// ── Gauge drawing ──────────────────────────────────────
-function drawGauge(speed) {
-  const W = CANVAS_W, H = CANVAS_H;
-  const cx = ARC_CX, cy = ARC_CY, r = ARC_R;
-  const ratio = Math.min(speed / MAX_SPEED_GAUGE, 1);
-
-  gCtx.clearRect(0, 0, W, H);
-
-  // ── Outer glow ring (track) ────────────────────────
-  gCtx.beginPath();
-  gCtx.arc(cx, cy, r, ARC_START, ARC_END);
-  gCtx.strokeStyle = 'rgba(255,255,255,0.05)';
-  gCtx.lineWidth   = 22;
-  gCtx.lineCap     = 'round';
-  gCtx.stroke();
-
-  // ── Background track ──────────────────────────────
-  gCtx.beginPath();
-  gCtx.arc(cx, cy, r, ARC_START, ARC_END);
-  gCtx.strokeStyle = 'rgba(255,255,255,0.06)';
-  gCtx.lineWidth   = 14;
-  gCtx.lineCap     = 'round';
-  gCtx.stroke();
-
-  // ── Tick marks ────────────────────────────────────
-  const totalAngle = ARC_END - ARC_START;
-  const steps      = 12;
-  for (let i = 0; i <= steps; i++) {
-    const a    = ARC_START + (i / steps) * totalAngle;
-    const isMajor = i % 3 === 0;
-    const ir   = r - (isMajor ? 24 : 18);
-    const or   = r - 8;
-    const x1   = cx + Math.cos(a) * ir;
-    const y1   = cy + Math.sin(a) * ir;
-    const x2   = cx + Math.cos(a) * or;
-    const y2   = cy + Math.sin(a) * or;
-    gCtx.beginPath();
-    gCtx.moveTo(x1, y1);
-    gCtx.lineTo(x2, y2);
-    gCtx.strokeStyle = isMajor ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.15)';
-    gCtx.lineWidth   = isMajor ? 2.5 : 1.5;
-    gCtx.stroke();
-
-    // Speed labels on major ticks
-    if (isMajor) {
-      const val   = Math.round((i / steps) * MAX_SPEED_GAUGE);
-      const lx    = cx + Math.cos(a) * (r - 38);
-      const ly    = cy + Math.sin(a) * (r - 38);
-      gCtx.fillStyle = 'rgba(255,255,255,0.3)';
-      gCtx.font      = '11px system-ui, sans-serif';
-      gCtx.textAlign = 'center';
-      gCtx.textBaseline = 'middle';
-      gCtx.fillText(val, lx, ly);
+    function money(n){
+      return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n || 0);
     }
-  }
 
-  // ── Coloured progress arc ─────────────────────────
-  if (ratio > 0) {
-    const arcEnd = ARC_START + ratio * totalAngle;
-    // Colour: green → cyan → orange → red
-    let colour;
-    if (ratio < 0.5)       colour = '#00ff9d';
-    else if (ratio < 0.75) colour = '#00d4ff';
-    else if (ratio < 0.9)  colour = '#ff9900';
-    else                   colour = '#ff3333';
+    function num(n){
+      return new Intl.NumberFormat('en-US').format(Math.round(n || 0));
+    }
 
-    // Glowing outer line
-    gCtx.beginPath();
-    gCtx.arc(cx, cy, r, ARC_START, arcEnd);
-    gCtx.strokeStyle = colour;
-    gCtx.lineWidth   = 22;
-    gCtx.lineCap     = 'round';
-    gCtx.globalAlpha = 0.15;
-    gCtx.stroke();
-    gCtx.globalAlpha = 1;
+    function showToast(text){
+      els.toast.textContent = text;
+      els.toast.classList.add('show');
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(()=>els.toast.classList.remove('show'), 1400);
+    }
 
-    // Main line
-    gCtx.beginPath();
-    gCtx.arc(cx, cy, r, ARC_START, arcEnd);
-    gCtx.strokeStyle = colour;
-    gCtx.lineWidth   = 10;
-    gCtx.lineCap     = 'round';
-    // Gradient effect by adding shadow
-    gCtx.shadowColor  = colour;
-    gCtx.shadowBlur   = 16;
-    gCtx.stroke();
-    gCtx.shadowBlur   = 0;
-  }
+    function setSection(name){
+      els.nav.querySelectorAll('button').forEach(btn => btn.classList.toggle('active', btn.dataset.section === name));
+      els.sections.forEach(section => section.classList.toggle('active', section.id === name));
+      window.scrollTo({top:0, behavior:'smooth'});
+    }
 
-  // ── Needle ────────────────────────────────────────
-  const needleAngle = ARC_START + ratio * totalAngle;
-  const nLen        = r - 30;
-  const nx = cx + Math.cos(needleAngle) * nLen;
-  const ny = cy + Math.sin(needleAngle) * nLen;
+    function draftTemplate(type, client, goal, notes){
+      const cleanClient = client || 'there';
+      const cleanGoal = goal || 'move things forward';
+      const cleanNotes = notes || 'no extra notes';
+      const subjectLine = {
+        email: 'Subject: Quick next step',
+        proposal: 'Proposal outline',
+        followup: 'Follow-up message',
+        post: 'Social post',
+      }[type] || 'Draft';
 
-  // Needle glow
-  gCtx.beginPath();
-  gCtx.moveTo(cx, cy);
-  gCtx.lineTo(nx, ny);
-  gCtx.strokeStyle = '#fff';
-  gCtx.lineWidth   = 6;
-  gCtx.lineCap     = 'round';
-  gCtx.shadowColor = '#00d4ff';
-  gCtx.shadowBlur  = 18;
-  gCtx.stroke();
-  gCtx.shadowBlur  = 0;
+      if(type === 'proposal'){
+        return `${subjectLine}\n\nHi ${cleanClient},\n\nThanks for the opportunity to help. Based on your notes, I put together a clear plan to ${cleanGoal}.\n\nWhat is included:\n• Clear scope and deliverables\n• Simple timeline with milestones\n• Room for revisions and feedback\n• A result-focused process that keeps things moving\n\nNotes: ${cleanNotes}\n\nNext step: reply with approval and I will finalize everything.\n\nBest,\n[Your Name]`;
+      }
+      if(type === 'followup'){
+        return `${subjectLine}\n\nHi ${cleanClient},\n\nJust checking in on the next step for ${cleanGoal}. I wanted to make this easy to review, so I kept the plan simple and clear.\n\n${cleanNotes !== 'no extra notes' ? `Extra note: ${cleanNotes}\n\n` : ''}If everything looks good, reply and I will get moving right away.\n\nThanks,\n[Your Name]`;
+      }
+      if(type === 'post'){
+        return `We help businesses ${cleanGoal} with less stress and more clarity.\n\nIf you need cleaner systems, faster replies, or better pricing structure, ${cleanNotes !== 'no extra notes' ? cleanNotes : 'this is a great time to simplify your workflow'}.\n\nSend a message to get started.`;
+      }
+      return `${subjectLine}\n\nHi ${cleanClient},\n\nThanks for reaching out. I reviewed your request and I can help you ${cleanGoal}.\n\nHere is the simple plan:\n• I will review the details\n• I will prepare a polished next step\n• I will keep everything easy to understand\n\n${cleanNotes !== 'no extra notes' ? `Notes: ${cleanNotes}\n\n` : ''}If you are ready, just reply and I will take it from there.\n\nBest,\n[Your Name]`;
+    }
 
-  // Needle body
-  gCtx.beginPath();
-  gCtx.moveTo(cx, cy);
-  gCtx.lineTo(nx, ny);
-  gCtx.strokeStyle = '#fff';
-  gCtx.lineWidth   = 2.5;
-  gCtx.stroke();
+    function writerTemplate(type, tone, audience, details, cta, extra){
+      const intro = tone === 'Concise'
+        ? 'Keep this short and clear.'
+        : tone === 'Warm'
+          ? 'Keep this warm and thoughtful.'
+          : tone === 'Confident'
+            ? 'Keep this confident and direct.'
+            : tone === 'Friendly'
+              ? 'Keep this friendly and approachable.'
+              : 'Keep this polished and professional.';
 
-  // Centre hub
-  gCtx.beginPath();
-  gCtx.arc(cx, cy, 9, 0, Math.PI * 2);
-  gCtx.fillStyle = '#fff';
-  gCtx.shadowColor = '#00d4ff';
-  gCtx.shadowBlur  = 14;
-  gCtx.fill();
-  gCtx.shadowBlur  = 0;
-  gCtx.beginPath();
-  gCtx.arc(cx, cy, 5, 0, Math.PI * 2);
-  gCtx.fillStyle = '#0a0e1a';
-  gCtx.fill();
-}
+      const target = audience || 'your audience';
+      const action = cta || 'reply';
+      const bonus = extra ? `\n\nExtra note: ${extra}` : '';
 
-// ── Sparkline drawing ──────────────────────────────────
-function drawSpark() {
-  const W = sparkCanvas.width;
-  const H = sparkCanvas.height;
-  sCtx.clearRect(0, 0, W, H);
+      const blocks = {
+        email: `Hi,\n\n${intro} I am reaching out to ${target} about ${details || 'your request'}.\n\nThe goal is to make the next step simple and easy to approve.${bonus}\n\nPlease ${action} when ready.\n\nBest,\n[Your Name]`,
+        proposal: `${intro} This proposal is for ${target}.\n\nProject summary:\n${details || 'Project details go here.'}\n\nDeliverables:\n• Clear scope\n• Polished execution\n• Easy communication${bonus}\n\nNext step: ${action}.`,
+        followup: `${intro} I wanted to follow up with ${target} about ${details || 'the open item'}.\n\nThe next step is simple and I can move forward once you ${action}.${bonus}`,
+        sales: `${intro} ${target} gets a faster, cleaner way to handle ${details || 'their work'}.\n\nThis solution helps teams save time, look more professional, and close more deals.${bonus}`,
+        social: `${intro} Helping ${target} with ${details || 'a better workflow'}.\n\nFast. Clean. Easy to use.${bonus}\n\n${action}.`
+      };
 
-  if (speedHistory.length < 2) {
-    sCtx.fillStyle = 'rgba(255,255,255,0.07)';
-    sCtx.fillRect(0, 0, W, H);
-    sCtx.fillStyle = 'rgba(255,255,255,0.2)';
-    sCtx.font      = '20px system-ui';
-    sCtx.textAlign = 'center';
-    sCtx.textBaseline = 'middle';
-    sCtx.fillText('No data yet', W / 2, H / 2);
-    return;
-  }
+      return blocks[type] || blocks.email;
+    }
 
-  const maxV = Math.max(...speedHistory.map(h => h.v), 1);
-  const minT = speedHistory[0].t;
-  const maxT = speedHistory[speedHistory.length - 1].t;
-  const span = maxT - minT || 1;
+    function quoteCalc(){
+      const hours = Math.max(0, parseFloat(els.qHours.value || 0));
+      const rate = Math.max(0, parseFloat(els.qRate.value || 0));
+      const extras = Math.max(0, parseFloat(els.qExtras.value || 0));
+      const margin = Math.max(0, parseFloat(els.qMargin.value || 0)) / 100;
+      const discount = Math.max(0, parseFloat(els.qDiscount.value || 0)) / 100;
+      const base = hours * rate + extras;
+      const markup = base * (1 + margin);
+      const price = markup * (1 - discount);
+      const profit = price - base;
+      const name = els.qProject.value.trim() || 'Untitled project';
 
-  // Gradient fill
-  const grad = sCtx.createLinearGradient(0, 0, 0, H);
-  grad.addColorStop(0,   'rgba(0,212,255,0.5)');
-  grad.addColorStop(1,   'rgba(0,212,255,0.0)');
+      els.qBase.textContent = money(base);
+      els.qPrice.textContent = money(price);
+      els.qProfit.textContent = money(profit);
+      els.quoteOutput.textContent =
+`Project: ${name}
 
-  sCtx.beginPath();
-  speedHistory.forEach((p, i) => {
-    const x = ((p.t - minT) / span) * W;
-    const y = H - (p.v / maxV) * (H - 4) - 2;
-    if (i === 0) sCtx.moveTo(x, y);
-    else         sCtx.lineTo(x, y);
-  });
-  // Close path for fill
-  sCtx.lineTo(W, H);
-  sCtx.lineTo(0, H);
-  sCtx.closePath();
-  sCtx.fillStyle = grad;
-  sCtx.fill();
+Base cost: ${money(base)}
+Suggested price: ${money(price)}
+Estimated profit: ${money(profit)}
 
-  // Line
-  sCtx.beginPath();
-  speedHistory.forEach((p, i) => {
-    const x = ((p.t - minT) / span) * W;
-    const y = H - (p.v / maxV) * (H - 4) - 2;
-    if (i === 0) sCtx.moveTo(x, y);
-    else         sCtx.lineTo(x, y);
-  });
-  sCtx.strokeStyle = '#00d4ff';
-  sCtx.lineWidth   = 2.5;
-  sCtx.lineJoin    = 'round';
-  sCtx.shadowColor = '#00d4ff';
-  sCtx.shadowBlur  = 8;
-  sCtx.stroke();
-  sCtx.shadowBlur  = 0;
-}
+Included math:
+• Hours: ${hours}
+• Rate: ${money(rate)}/hr
+• Extras: ${money(extras)}
+• Margin: ${Math.round(margin * 100)}%
+• Discount: ${Math.round(discount * 100)}%
 
-// ── Animation loop ─────────────────────────────────────
-function loop(ts) {
-  raf = requestAnimationFrame(loop);
+Use this as a starting quote, then adjust for rush jobs or premium value.`;
+      return els.quoteOutput.textContent;
+    }
 
-  const dt = lastTimestamp ? (ts - lastTimestamp) / 1000 : 0.016;
-  lastTimestamp = ts;
+    function renderClients(){
+      els.clientList.innerHTML = '';
+      const clients = state.clients.slice().sort((a,b)=>String(a.status).localeCompare(String(b.status)));
+      els.clientCount.textContent = `${clients.length} client${clients.length === 1 ? '' : 's'}`;
 
-  // Smooth interpolation toward target speed
-  const k = tracking ? 4.0 : 6.0;   // chase factor
-  displaySpeed += (currentSpeed - displaySpeed) * Math.min(k * dt, 1);
-  if (Math.abs(displaySpeed - currentSpeed) < 0.1) displaySpeed = currentSpeed;
+      if(!clients.length){
+        els.clientList.innerHTML = `<div class="item"><h4>No clients yet</h4><p>Add your first client to start tracking deals.</p></div>`;
+        return;
+      }
 
-  const shown = Math.round(displaySpeed);
-  speedValEl.textContent = shown.toString();
+      clients.forEach((c, idx)=>{
+        const statusClass = c.status === 'won' ? 'good' : c.status === 'waiting' ? 'warn' : c.status === 'lead' ? '' : 'bad';
+        const pillText = c.status.charAt(0).toUpperCase() + c.status.slice(1);
+        const el = document.createElement('div');
+        el.className = 'item';
+        el.innerHTML = `
+          <div class="item-top">
+            <h4>${escapeHtml(c.name)}</h4>
+            <span class="pill ${statusClass}">${pillText}</span>
+          </div>
+          <p><strong>${money(Number(c.value) || 0)}</strong> · Next: ${escapeHtml(c.next || '—')}</p>
+          <p>${escapeHtml(c.notes || '')}</p>
+          <div class="toolbar">
+            <button class="btn secondary" data-action="move" data-index="${idx}">Move stage</button>
+            <button class="btn ghost" data-action="remove" data-index="${idx}">Delete</button>
+          </div>
+        `;
+        els.clientList.appendChild(el);
+      });
 
-  drawGauge(displaySpeed);
-  drawSpark();
-}
+      els.clientList.querySelectorAll('button[data-action]').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          const index = Number(btn.dataset.index);
+          if(btn.dataset.action === 'remove'){
+            state.clients.splice(index, 1);
+            saveState(); renderAll(); showToast('Client removed');
+          } else {
+            const stages = ['lead','active','waiting','won'];
+            const current = state.clients[index].status;
+            state.clients[index].status = stages[(stages.indexOf(current) + 1) % stages.length];
+            saveState(); renderAll(); showToast('Client updated');
+          }
+        });
+      });
+    }
 
-// ── Kick off render loop immediately ──────────────────
-raf = requestAnimationFrame(loop);
+    function renderTasks(){
+      const tasks = [
+        {title:'Reply to new leads', text:'Use the AI writer to answer faster and sound more polished.', pill:'High priority', cls:'bad'},
+        {title:'Send one quote', text:'Price with confidence using the quote builder.', pill:'Sales', cls:'good'},
+        {title:'Review active clients', text:'Check who is waiting and move them forward today.', pill:'CRM', cls:'warn'},
+      ];
+      els.taskList.innerHTML = tasks.map(t=>`
+        <div class="item">
+          <div class="item-top">
+            <h4>${t.title}</h4>
+            <span class="pill ${t.cls}">${t.pill}</span>
+          </div>
+          <p>${t.text}</p>
+        </div>
+      `).join('');
+    }
 
-// Show permission overlay (already shown via HTML on load)
-// It hides itself when user clicks the button.
-</script>
+    function renderActivity(){
+      const list = state.history.slice(0,4);
+      if(!list.length){
+        els.activityList.innerHTML = `<div class="item"><h4>No activity yet</h4><p>Generate or save something to see it here.</p></div>`;
+        return;
+      }
+      els.activityList.innerHTML = list.map(entry=>`
+        <div class="item">
+          <div class="item-top">
+            <h4>${escapeHtml(entry.type || 'Draft')}</h4>
+            <span class="pill">${new Date().toLocaleDateString()}</span>
+          </div>
+          <p>${escapeHtml(entry.text)}</p>
+        </div>
+      `).join('');
+    }
+
+    function renderMetrics(){
+      const pipeline = state.clients.reduce((sum,c)=>sum + (Number(c.value)||0), 0);
+      const followups = state.clients.filter(c => ['lead','waiting'].includes(c.status)).length;
+      const won = state.clients.filter(c => c.status === 'won').length;
+      const winrate = state.clients.length ? Math.round((won / state.clients.length) * 100) : 0;
+      const week = pipeline * 0.22;
+
+      els.metrics.pipeline.textContent = money(pipeline);
+      els.metrics.followups.textContent = num(followups);
+      els.metrics.winrate.textContent = `${winrate}%`;
+      els.metrics.week.textContent = money(week);
+
+      const today = followups + won + (state.history.length ? 1 : 0);
+      els.todayValue.textContent = num(today);
+      els.todaySub.textContent = `${followups} follow-ups, ${won} wins, and ${state.history.length} saved draft${state.history.length === 1 ? '' : 's'}.`;
+    }
+
+    function renderAll(){
+      renderMetrics();
+      renderTasks();
+      renderActivity();
+      renderClients();
+      quoteCalc();
+    }
+
+    function escapeHtml(str=''){
+      return String(str)
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'","&#39;");
+    }
+
+    function setQuickTemplate(type){
+      state.draftType = type;
+      saveState();
+      document.querySelectorAll('#quickTabs .tab').forEach(btn => btn.classList.toggle('active', btn.dataset.template === type));
+      els.draftTypeLabel.textContent = `${type.charAt(0).toUpperCase() + type.slice(1)} draft`;
+    }
+
+    function currentQuickDraft(){
+      return draftTemplate(state.draftType || 'email', els.quickClient.value.trim(), els.quickGoal.value.trim(), els.quickNotes.value.trim());
+    }
+
+    function generateQuickDraft(){
+      const text = currentQuickDraft();
+      els.draftOutput.textContent = text;
+      state.lastDraft = text;
+      saveState();
+      showToast('Draft generated');
+    }
+
+    function generateWriterDraft(){
+      const text = writerTemplate(
+        els.writerType.value,
+        els.writerTone.value,
+        els.writerAudience.value.trim(),
+        els.writerDetails.value.trim(),
+        els.writerCTA.value.trim(),
+        els.writerExtra.value.trim()
+      );
+      els.writerOutput.textContent = text;
+      els.writerBadge.textContent = `${els.writerType.value} ready`;
+      state.lastDraft = text;
+      saveState();
+      showToast('Writer draft ready');
+    }
+
+    async function copyText(text){
+      try{
+        await navigator.clipboard.writeText(text);
+        showToast('Copied');
+      }catch{
+        showToast('Copy failed');
+      }
+    }
+
+    function addClient(){
+      const name = els.cName.value.trim();
+      if(!name){
+        showToast('Add a client name');
+        return;
+      }
+      state.clients.unshift({
+        name,
+        status: els.cStatus.value,
+        value: Number(els.cValue.value || 0),
+        next: els.cNext.value.trim(),
+        notes: els.cNotes.value.trim()
+      });
+      saveState();
+      renderAll();
+      els.cName.value = '';
+      els.cNext.value = '';
+      els.cNotes.value = '';
+      showToast('Client added');
+    }
+
+    function loadDemo(){
+      state.clients = structuredClone(demoState.clients);
+      state.history = structuredClone(demoState.history);
+      state.draftType = 'email';
+      saveState();
+      setQuickTemplate('email');
+      els.quickClient.value = 'Jordan';
+      els.quickGoal.value = 'book a discovery call';
+      els.quickNotes.value = 'Mention fast turnaround and a clear next step.';
+      els.writerType.value = 'proposal';
+      els.writerTone.value = 'Professional';
+      els.writerAudience.value = 'local business owners';
+      els.writerDetails.value = 'A polished starter service for design, quoting, and follow-up support.';
+      els.writerCTA.value = 'reply with approval';
+      els.writerExtra.value = 'Emphasize clarity and speed';
+      els.qHours.value = 12;
+      els.qRate.value = 65;
+      els.qExtras.value = 25;
+      els.qMargin.value = 35;
+      els.qDiscount.value = 0;
+      els.qProject.value = 'Website refresh';
+      renderAll();
+      generateQuickDraft();
+      generateWriterDraft();
+      quoteCalc();
+      showToast('Demo loaded');
+    }
+
+    function resetAllData(){
+      if(!confirm('Reset all saved clients and drafts?')) return;
+      state.clients = structuredClone(demoState.clients);
+      state.history = [];
+      state.draftType = 'email';
+      state.lastDraft = '';
+      localStorage.removeItem(STORAGE_KEY);
+      Object.assign(state, loadState());
+      renderAll();
+      showToast('Data reset');
+    }
+
+    // Events
+    els.nav.addEventListener('click', (e)=>{
+      const btn = e.target.closest('button[data-section]');
+      if(btn) setSection(btn.dataset.section);
+    });
+
+    els.quickTabs.addEventListener('click', (e)=>{
+      const btn = e.target.closest('button[data-template]');
+      if(btn){
+        setQuickTemplate(btn.dataset.template);
+        generateQuickDraft();
+      }
+    });
+
+    els.generateQuick.addEventListener('click', generateQuickDraft);
+    els.saveDraft.addEventListener('click', ()=>{
+      const text = currentQuickDraft();
+      state.history.unshift({type: state.draftType || 'Email', text});
+      state.lastDraft = text;
+      saveState();
+      renderActivity();
+      showToast('Saved to history');
+    });
+    els.copyDraft.addEventListener('click', ()=>copyText(els.draftOutput.textContent));
+    els.clearDraft.addEventListener('click', ()=>{
+      els.draftOutput.textContent = 'Your polished draft will appear here.';
+      showToast('Cleared');
+    });
+
+    els.generateWriter.addEventListener('click', generateWriterDraft);
+    els.copyWriter.addEventListener('click', ()=>copyText(els.writerOutput.textContent));
+
+    els.calcQuote.addEventListener('click', quoteCalc);
+    els.copyQuote.addEventListener('click', ()=>copyText(els.quoteOutput.textContent));
+
+    els.addClient.addEventListener('click', addClient);
+    els.resetAll.addEventListener('click', resetAllData);
+
+    [els.qHours, els.qRate, els.qExtras, els.qMargin, els.qDiscount, els.qProject].forEach(el => el.addEventListener('input', quoteCalc));
+    els.writerType.addEventListener('change', generateWriterDraft);
+    els.writerTone.addEventListener('change', generateWriterDraft);
+    [els.writerAudience, els.writerDetails, els.writerCTA, els.writerExtra].forEach(el => el.addEventListener('input', ()=>{
+      els.writerBadge.textContent = 'Editing';
+    }));
+
+    els.demoFill.addEventListener('click', loadDemo);
+    els.openComposer.addEventListener('click', ()=>els.modal.classList.add('open'));
+    els.closeModal.addEventListener('click', ()=>els.modal.classList.remove('open'));
+    els.modal.addEventListener('click', (e)=>{ if(e.target === els.modal) els.modal.classList.remove('open'); });
+
+    function init(){
+      const savedType = state.draftType || 'email';
+      setQuickTemplate(savedType);
+      if(state.lastDraft){
+        els.draftOutput.textContent = state.lastDraft;
+        els.writerOutput.textContent = state.lastDraft;
+      }
+      renderAll();
+      generateQuickDraft();
+      generateWriterDraft();
+      quoteCalc();
+    }
+
+    // keep last line simple
+    init();
+  </script>
 </body>
 </html>
